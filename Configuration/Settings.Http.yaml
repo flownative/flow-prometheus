@@ -1,0 +1,10 @@
+Neos:
+  Flow:
+    http:
+      chain:
+        'process':
+          chain:
+            'Flownative.Prometheus:metricsExporter':
+              'position': 'before routing'
+              component: 'Flownative\Prometheus\Http\MetricsExporterComponent'
+              componentOptions: []
