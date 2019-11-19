@@ -64,5 +64,22 @@ test_counter 5
 EOD;
         self::assertTrue($componentContext->getParameter(ComponentChain::class, 'cancel'));
         self::assertSame($expectedOutput, $componentContext->getHttpResponse()->getBody()->getContents());
+        self::assertSame('text/plain; version=0.0.4; charset=UTF-8', $componentContext->getHttpResponse()->getHeader('Content-Type'));
+    }
+
+    /**
+     * @test
+     * @throws InvalidCollectorTypeException
+     */
+    public function componentRendersCommentIfNoMetricsExist(): void
+    {
+        $componentContext = new ComponentContext(Request::create(new Uri('http://localhost/metrics')), new Response());
+
+        $httpComponent = new MetricsExporterComponent();
+        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+        $httpComponent->handle($componentContext);
+
+        $expectedOutput = "# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.\n";
+        self::assertSame($expectedOutput, $componentContext->getHttpResponse()->getBody()->getContents());
     }
 }

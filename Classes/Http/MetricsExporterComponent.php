@@ -43,10 +43,19 @@ class MetricsExporterComponent implements ComponentInterface
         if ($componentContext->getHttpRequest()->getUri()->getPath() !== '/metrics') {
             return;
         }
-        $renderer = new Renderer();
-        $body = ContentStream::fromContents($renderer->render($this->collectorRegistry->collect()));
 
-        $componentContext->replaceHttpResponse($componentContext->getHttpResponse()->withBody($body));
+        $renderer = new Renderer();
+        $output = $renderer->render($this->collectorRegistry->collect());
+        if ($output === '') {
+            $output = "# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.\n";
+        }
+        $body = ContentStream::fromContents($output);
+
+        $response = $componentContext->getHttpResponse()
+            ->withBody($body)
+            ->withHeader('Content-Type', 'text/plain; version=' . $renderer->getFormatVersion() . '; charset=UTF-8');
+
+        $componentContext->replaceHttpResponse($response);
         $componentContext->setParameter(ComponentChain::class, 'cancel', true);
     }
 }
