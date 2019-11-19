@@ -35,6 +35,20 @@ class InMemoryStorage implements StorageInterface
     }
 
     /**
+     * @return void
+     */
+    public function flush(): void
+    {
+        $this->countersData = [];
+        $this->gaugesData = [];
+    }
+
+    public function getKeyPrefix(): string
+    {
+        return '';
+    }
+
+    /**
      * @param AbstractCollector $collector
      */
     public function registerCollector(AbstractCollector $collector): void

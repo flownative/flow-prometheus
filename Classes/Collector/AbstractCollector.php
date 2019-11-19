@@ -83,6 +83,6 @@ abstract class AbstractCollector
      */
     public function getIdentifier(): string
     {
-        return sha1($this->name . ':' . implode(',', array_keys($this->labels)));
+        return implode(':', [$this->storage->getKeyPrefix(), static::TYPE, $this->name]);
     }
 }

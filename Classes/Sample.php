@@ -33,6 +33,9 @@ class Sample
     {
         $this->name = $name;
         $this->labels = $labels;
+        if (!is_int($value) && !is_float($value)) {
+            throw new \InvalidArgumentException(sprintf('invalid value type for sample: got "%s", "int" or "float" expected', gettype($value)), 1574182081);
+        }
         $this->value = $value;
     }
 

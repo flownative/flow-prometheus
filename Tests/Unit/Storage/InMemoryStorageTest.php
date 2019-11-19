@@ -8,49 +8,17 @@ namespace Flownative\Prometheus\Tests\Unit;
  * (c) Flownative GmbH - www.flownative.com
  */
 
-use Flownative\Prometheus\Collector\Counter;
-use Flownative\Prometheus\Storage\CounterUpdate;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use Flownative\Prometheus\Storage\StorageInterface;
-use Neos\Flow\Tests\UnitTestCase;
 
-class InMemoryStorageTest extends UnitTestCase
+class InMemoryStorageTest extends AbstractStorageTest
 {
-    /**
-     * @test
-     */
-    public function updateCounterIncreasesCounterByGivenValue(): void
-    {
-        $storage = new InMemoryStorage();
-        $counter = new Counter($storage, 'test_counter');
-        $storage->registerCollector($counter);
-
-        $storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 5, []));
-        $storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 2, []));
-        $sampleCollections = $storage->collect();
-
-        $samples = $sampleCollections[$counter->getIdentifier()]->getSamples();
-        self::assertCount(1, $samples);
-        self::assertSame($samples[0]->getValue(), 7);
-    }
 
     /**
-     * @test
+     * @return void
      */
-    public function updateCounterResetsCounterIfSetOperationIsSpecified(): void
+    public function setUp(): void
     {
-        $storage = new InMemoryStorage();
-        $counter = new Counter($storage, 'test_counter');
-        $storage->registerCollector($counter);
-
-        $storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 5, []));
-
-        // Will reset the counter to 0, even though 2 was specified:
-        $storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_SET, 2, []));
-        $sampleCollections = $storage->collect();
-
-        $samples = $sampleCollections[$counter->getIdentifier()]->getSamples();
-        self::assertCount(1, $samples);
-        self::assertSame($samples[0]->getValue(), 0);
+        parent::setUp();
+        $this->storage = new InMemoryStorage();
     }
 }

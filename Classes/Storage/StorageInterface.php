@@ -9,6 +9,7 @@ namespace Flownative\Prometheus\Storage;
  */
 
 use Flownative\Prometheus\Collector\Counter;
+use Flownative\Prometheus\SampleCollection;
 
 interface StorageInterface
 {
@@ -16,9 +17,19 @@ interface StorageInterface
     public const OPERATION_SET = 's';
 
     /**
-     * @return array
+     * @return SampleCollection[]
      */
     public function collect(): array;
+
+    /**
+     * @return void
+     */
+    public function flush(): void;
+
+    /**
+     * @return string
+     */
+    public function getKeyPrefix(): string;
 
     /**
      * @param Counter $counter

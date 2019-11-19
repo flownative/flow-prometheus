@@ -1,3 +1,7 @@
 Flownative:
   Prometheus:
     metrics: []
+#      flownative_test_hits_total:
+#        type: 'counter'
+#        help: 'A counter for testing'
+#        labelNames: ['code']

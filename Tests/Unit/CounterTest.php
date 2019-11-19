@@ -32,14 +32,14 @@ class CounterTest extends UnitTestCase
     /**
      * @test
      */
-    public function getIdentifierReturnsSha1OverNameAndLabels(): void
+    public function getIdentifierReturnsGeneratedString(): void
     {
         $name = 'flownative_prometheus_test_hits_total';
         $help = 'A counter for testing';
         $labels = ['status' => 200, 'test' => 1];
 
         $counter = new Counter(new InMemoryStorage(), $name, $help, $labels);
-        $expectedIdentifier = sha1($name . ':' . implode(',', array_keys($labels)));
+        $expectedIdentifier = ':' . Counter::TYPE . ':' . $name;
         self::assertSame($expectedIdentifier, $counter->getIdentifier());
     }
 
