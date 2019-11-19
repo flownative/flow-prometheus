@@ -23,13 +23,10 @@ final class DefaultCollectorRegistry extends CollectorRegistry
     protected $settings;
 
     /**
-     *
+     * @throws Exception\InvalidCollectorTypeException
      */
     public function initializeObject(): void
     {
-        try {
-            $this->registerMany($this->settings);
-        } catch (Exception\InvalidCollectorTypeException $e) {
-        }
-    }
+        $this->registerMany($this->settings);
+}
 }

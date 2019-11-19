@@ -66,6 +66,13 @@ EOD;
                     new Sample('http_requests_total', ['method' => 'post', 'code' => 200], 1027),
                     new Sample('http_requests_total', ['method' => 'post', 'code' => 400], 3),
                 ]
+            ),
+            new SampleCollection(
+                'counter_without_samples',
+                Counter::TYPE,
+                'A counter which was not used',
+                [],
+                []
             )
         ];
 

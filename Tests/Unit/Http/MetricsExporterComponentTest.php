@@ -49,8 +49,8 @@ class MetricsExporterComponentTest extends UnitTestCase
 
         $storage = new InMemoryStorage();
         $collectorRegistry = new CollectorRegistry($storage);
-        $collectorRegistry->register('test_counter', Counter::TYPE, 'This is a simple counter');
 
+        $collectorRegistry->register('test_counter', Counter::TYPE, 'This is a simple counter');
         $collectorRegistry->getCounter('test_counter')->inc(5);
 
         $httpComponent = new MetricsExporterComponent();

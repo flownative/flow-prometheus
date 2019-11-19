@@ -33,6 +33,9 @@ class Renderer
         $lines = [];
 
         foreach ($sampleCollections as $sampleCollection) {
+            if ($sampleCollection->getSamples() === []) {
+                continue;
+            }
             if ($sampleCollection->getHelp() !== '') {
                 $lines[] = '# HELP ' . $sampleCollection->getName() . " {$sampleCollection->getHelp()}";
             }

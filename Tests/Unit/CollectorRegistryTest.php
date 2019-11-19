@@ -9,9 +9,7 @@ namespace Flownative\Prometheus\Tests\Unit;
  */
 
 use Flownative\Prometheus\Collector\Counter;
-use Flownative\Prometheus\Collector\Gauge;
 use Flownative\Prometheus\CollectorRegistry;
-use Flownative\Prometheus\Configuration;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Storage\InMemoryStorage;
 use Neos\Flow\Tests\UnitTestCase;
@@ -135,18 +133,5 @@ class CollectorRegistryTest extends UnitTestCase
         $registry->register('flownative_prometheus_test_other_calls_total', Counter::TYPE, 'another test call counter', ['tests', 'counter']);
         $otherCounter = $registry->getCounter('flownative_prometheus_test_other_calls_total');
         self::assertNotSame($counterA, $otherCounter);
-    }
-
-    /**
-     * @test
-     * @throws InvalidCollectorTypeException
-     */
-    public function getCounterThrowsExceptionOnInvalidType(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-
-        $registry = new CollectorRegistry(new InMemoryStorage());
-        $registry->register('flownative_prometheus_test_gauge', Gauge::TYPE);
-        $registry->getCounter('flownative_prometheus_test_gauge');
     }
 }

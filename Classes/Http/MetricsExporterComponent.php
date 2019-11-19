@@ -9,7 +9,6 @@ namespace Flownative\Prometheus\Http;
  */
 
 use Flownative\Prometheus\CollectorRegistry;
-use Flownative\Prometheus\DefaultCollectorRegistry;
 use Flownative\Prometheus\Renderer;
 use Neos\Flow\Http\Component\ComponentChain;
 use Neos\Flow\Http\Component\ComponentContext;
@@ -22,11 +21,13 @@ use Neos\Flow\Http\ContentStream;
 class MetricsExporterComponent implements ComponentInterface
 {
     /**
-     * @var DefaultCollectorRegistry
+     * @var CollectorRegistry
      */
     protected $collectorRegistry;
 
     /**
+     * Note: In an Objects.yaml this injection is pre-defined to inject the DefaultCollectorRegisry
+     *
      * @param CollectorRegistry $collectorRegistry
      */
     public function injectCollectorRegistry(CollectorRegistry $collectorRegistry): void
@@ -42,7 +43,6 @@ class MetricsExporterComponent implements ComponentInterface
         if ($componentContext->getHttpRequest()->getUri()->getPath() !== '/metrics') {
             return;
         }
-
         $renderer = new Renderer();
         $body = ContentStream::fromContents($renderer->render($this->collectorRegistry->collect()));
 
