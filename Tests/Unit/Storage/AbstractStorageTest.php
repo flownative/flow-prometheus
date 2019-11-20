@@ -74,4 +74,36 @@ abstract class AbstractStorageTest extends UnitTestCase
         self::assertCount(1, $samples);
         self::assertSame($samples[0]->getValue(), 0);
     }
+
+    /**
+     * @test
+     */
+    public function multipleCountersDontInfluenceEachOther(): void
+    {
+        $counterA = new Counter($this->storage, 'test_counter_a');
+        $counterB = new Counter($this->storage, 'test_counter_b');
+
+        $this->storage->registerCollector($counterA);
+        $this->storage->registerCollector($counterB);
+
+        $this->storage->updateCounter($counterA, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 5, []));
+        $this->storage->updateCounter($counterB, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 3, []));
+        $this->storage->updateCounter($counterA, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 1.5, []));
+        $this->storage->updateCounter($counterB, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 2.75, []));
+        $this->storage->updateCounter($counterA, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 2, []));
+        $sampleCollections = $this->storage->collect();
+
+        self::assertCount(2, $sampleCollections);
+
+        $samplesA = $sampleCollections[$counterA->getIdentifier()]->getSamples();
+
+        self::assertCount(1, $samplesA);
+        self::assertSame($samplesA[0]->getValue(), 8.5);
+
+        $samplesB = $sampleCollections[$counterB->getIdentifier()]->getSamples();
+        self::assertCount(1, $samplesB);
+        self::assertSame($samplesB[0]->getValue(), 5.75);
+    }
+
+
 }

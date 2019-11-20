@@ -2,3 +2,8 @@ Flownative\Prometheus\Http\MetricsExporterComponent:
   properties:
     collectorRegistry:
       object: Flownative\Prometheus\DefaultCollectorRegistry
+
+Flownative\Prometheus\DefaultCollectorRegistry:
+  arguments:
+    1:
+      object: Flownative\Prometheus\Storage\InMemoryStorage

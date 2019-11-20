@@ -140,9 +140,8 @@ class RedisStorage implements StorageInterface
 
         switch ($update->getOperation()) {
             case StorageInterface::OPERATION_INCREASE:
-                $value = $update->getValue();
-                $method = is_float($value) ? 'hIncrByFloat' : 'hIncrBy';
-                $this->redis->$method(
+                $value = (float)$update->getValue();
+                $this->redis->hIncrByFloat(
                     $counter->getIdentifier(),
                     $this->encodeLabels($update->getLabels()),
                     $update->getValue()
@@ -186,7 +185,6 @@ class RedisStorage implements StorageInterface
             usort($samples, static function ($a, $b) {
                 return strcmp(implode('', $a['labelValues']), implode('', $b['labelValues']));
             });
-
 
             $sampleCollections[$key] = new SampleCollection(
                 $counterName,

@@ -72,21 +72,6 @@ class CollectorRegistryTest extends UnitTestCase
 
     /**
      * @test
-     * @dataProvider validConfigurations()
-     * @param array $collectorConfigurations
-     * @throws InvalidCollectorTypeException
-     */
-    public function constructorRegistersGivenCollectors(array $collectorConfigurations): void
-    {
-        $registry = new CollectorRegistry(new InMemoryStorage(), $collectorConfigurations);
-        $name = array_key_first($collectorConfigurations);
-        $counter = $registry->getCounter($name);
-        self::assertNotNull($counter);
-        self::assertSame($name, $counter->getName());
-    }
-
-    /**
-     * @test
      * @throws InvalidCollectorTypeException
      */
     public function unregisterUnregistersGivenCollector(): void

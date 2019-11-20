@@ -8,10 +8,9 @@ namespace Flownative\Prometheus;
  * (c) Flownative GmbH - www.flownative.com
  */
 
-use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
-use Flownative\Prometheus\Collector\AbstractCollector;
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Storage\StorageInterface;
 
 class CollectorRegistry
@@ -33,15 +32,10 @@ class CollectorRegistry
 
     /**
      * @param StorageInterface $storage
-     * @param array $collectorConfigurations
-     * @throws InvalidCollectorTypeException
      */
-    public function __construct(StorageInterface $storage, array $collectorConfigurations = [])
+    public function __construct(StorageInterface $storage)
     {
         $this->storage = $storage;
-        if ($collectorConfigurations !== []) {
-            $this->registerMany($collectorConfigurations);
-        }
     }
 
     /**
