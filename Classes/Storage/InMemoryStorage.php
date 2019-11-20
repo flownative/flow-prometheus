@@ -14,7 +14,7 @@ use Flownative\Prometheus\Collector\Gauge;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
 
-class InMemoryStorage implements StorageInterface
+class InMemoryStorage extends AbstractStorage
 {
     /**
      * @var array
@@ -107,7 +107,7 @@ class InMemoryStorage implements StorageInterface
             foreach ($collectorData['values'] as $encodedLabels => $value) {
                 $samples[] = new Sample($collector->getName(), $this->decodeLabels($encodedLabels), $value);
             }
-#            $this->sortSamples($data['samples']);
+            $this->sortSamples($samples);
             $collections[$collectorIdentifier] = new SampleCollection(
                 $collector->getName(),
                 $collector->getType(),
@@ -118,26 +118,5 @@ class InMemoryStorage implements StorageInterface
         }
 
         return $collections;
-    }
-
-    /**
-     * Sorts labels by key and returns them JSON and BASE64 encoded
-     *
-     * @param array $labels
-     * @return string
-     */
-    private function encodeLabels(array $labels): string
-    {
-        ksort($labels);
-        return base64_encode(json_encode($labels, JSON_THROW_ON_ERROR, 512));
-    }
-
-    /**
-     * @param string $encodedLabels
-     * @return array
-     */
-    private function decodeLabels(string $encodedLabels): array
-    {
-        return json_decode(base64_decode($encodedLabels), true, 512, JSON_THROW_ON_ERROR);
     }
 }

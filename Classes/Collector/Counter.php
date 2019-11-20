@@ -24,9 +24,10 @@ class Counter extends AbstractCollector
 
     /**
      * @param int|float|double $amount
+     * @param array $labels
      */
-    public function inc($amount = 1): void
+    public function inc($amount = 1, array $labels = []): void
     {
-        $this->storage->updateCounter($this, new CounterUpdate(StorageInterface::OPERATION_INCREASE, $amount, $this->labels));
+        $this->storage->updateCounter($this, new CounterUpdate(StorageInterface::OPERATION_INCREASE, $amount, $labels));
     }
 }

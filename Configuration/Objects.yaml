@@ -3,7 +3,16 @@ Flownative\Prometheus\Http\MetricsExporterComponent:
     collectorRegistry:
       object: Flownative\Prometheus\DefaultCollectorRegistry
 
+
 Flownative\Prometheus\DefaultCollectorRegistry:
   arguments:
     1:
       object: Flownative\Prometheus\Storage\InMemoryStorage
+
+Flownative\Prometheus\Storage\RedisStorage:
+  arguments:
+    1:
+      value:
+        hostname: '%env:REDIS_HOST%'
+        port: '%env:REDIS_PORT%'
+        password: '%env:REDIS_PASSWORD%'

@@ -91,4 +91,35 @@ class CounterTest extends UnitTestCase
         self::assertCount(1, $samples);
         self::assertSame($expectedResult, reset($samples)->getValue());
     }
+
+    /**
+     * @test
+     */
+    public function incSupportsLabels(): void
+    {
+        $storage = new InMemoryStorage();
+
+        $counter = new Counter($storage,'http_responses_total');
+        $counter->inc(5, ['code' => 200]);
+        $counter->inc(2, ['code' => 404]);
+        $counter->inc(3, ['code' => 200]);
+
+        $metrics = $storage->collect();
+        $samples = $metrics[$counter->getIdentifier()]->getSamples();
+
+        self::assertCount(2, $samples);
+
+        foreach($samples as $sample) {
+            switch ($sample->getLabels()['code']) {
+                case 200:
+                    self::assertSame(8, $sample->getValue());
+                break;
+                case 404:
+                    self::assertSame(2, $sample->getValue());
+                break;
+                default:
+                    self::fail(sprintf('Unexpected code %s', $sample->getLabels()['code']));
+            }
+        }
+    }
 }

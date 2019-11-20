@@ -23,7 +23,7 @@ use Redis;
  * @see http://redis.io/
  * @see https://github.com/nicolasff/phpredis
  */
-class RedisStorage implements StorageInterface
+class RedisStorage extends AbstractStorage
 {
     private const KEY_SUFFIX = '_KEYS';
 
@@ -182,9 +182,7 @@ class RedisStorage implements StorageInterface
                     $value
                 );
             }
-            usort($samples, static function ($a, $b) {
-                return strcmp(implode('', $a['labelValues']), implode('', $b['labelValues']));
-            });
+            $this->sortSamples($samples);
 
             $sampleCollections[$key] = new SampleCollection(
                 $counterName,
@@ -223,27 +221,6 @@ class RedisStorage implements StorageInterface
         }
         $redis->select($this->database);
         return $redis;
-    }
-
-    /**
-     * Sorts labels by key and returns them JSON and BASE64 encoded
-     *
-     * @param array $labels
-     * @return string
-     */
-    private function encodeLabels(array $labels): string
-    {
-        ksort($labels);
-        return base64_encode(json_encode($labels, JSON_THROW_ON_ERROR, 512));
-    }
-
-    /**
-     * @param string $encodedLabels
-     * @return array
-     */
-    private function decodeLabels(string $encodedLabels): array
-    {
-        return json_decode(base64_decode($encodedLabels), true, 512, JSON_THROW_ON_ERROR);
     }
 
     /**

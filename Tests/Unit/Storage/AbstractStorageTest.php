@@ -9,6 +9,7 @@ namespace Flownative\Prometheus\Tests\Unit;
  */
 
 use Flownative\Prometheus\Collector\Counter;
+use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\Storage\CounterUpdate;
 use Flownative\Prometheus\Storage\InMemoryStorage;
 use Flownative\Prometheus\Storage\StorageInterface;
@@ -53,6 +54,62 @@ abstract class AbstractStorageTest extends UnitTestCase
         $samples = $sampleCollections[$counter->getIdentifier()]->getSamples();
         self::assertCount(1, $samples);
         self::assertSame($samples[0]->getValue(), 9.5);
+    }
+
+    /**
+     * @test
+     */
+    public function updateCounterSupportsLabels(): void
+    {
+        $counter = new Counter($this->storage, 'http_responses_total');
+        $this->storage->registerCollector($counter);
+
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 25, ['code' => 200]));
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 3, ['code' => 404]));
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 43, ['code' => 200]));
+
+        $metrics = $this->storage->collect();
+        $samples = $metrics[$counter->getIdentifier()]->getSamples();
+
+        self::assertCount(2, $samples);
+
+        foreach ($samples as $sample) {
+            switch ($sample->getLabels()['code']) {
+                case 200:
+                    self::assertSame(68, $sample->getValue());
+                break;
+                case 404:
+                    self::assertSame(3, $sample->getValue());
+                break;
+                default:
+                    self::fail(sprintf('Unexpected code %s', $sample->getLabels()['code']));
+            }
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function updateCounterSortsSamplesByLabels(): void
+    {
+        $counter = new Counter($this->storage, 'http_responses_total');
+        $this->storage->registerCollector($counter);
+
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 25, ['code' => 200, 'access_protection' => 'no']));
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 3, ['code' => 404]));
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 105, ['code' => 200, 'access_protection' => 'yes']));
+        $this->storage->updateCounter($counter, new CounterUpdate(StorageInterface::OPERATION_INCREASE, 9, ['code' => 404]));
+
+        $metrics = $this->storage->collect();
+        $samples = $metrics[$counter->getIdentifier()]->getSamples();
+
+        self::assertCount(3, $samples);
+
+        self::assertEquals([
+            new Sample('http_responses_total', ['access_protection' => 'no', 'code' => 200], 25),
+            new Sample('http_responses_total', ['access_protection' => 'yes', 'code' => 200], 105),
+            new Sample('http_responses_total', ['code' => 404], 12),
+        ], $samples);
     }
 
     /**
