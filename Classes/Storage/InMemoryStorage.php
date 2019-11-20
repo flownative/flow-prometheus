@@ -31,7 +31,7 @@ class InMemoryStorage extends AbstractStorage
      */
     public function collect(): array
     {
-        return $this->prepareCollections($this->countersData);
+        return $this->prepareCollections(array_merge($this->countersData, $this->gaugesData));
     }
 
     /**
@@ -90,6 +90,35 @@ class InMemoryStorage extends AbstractStorage
             $value = 0;
         }
         $this->countersData[$identifier]['values'][$encodedLabels] = $value;
+    }
+
+    /**
+     * @param Gauge $gauge
+     * @param GaugeUpdate $update
+     * @return void
+     */
+    public function updateGauge(Gauge $gauge, GaugeUpdate $update): void
+    {
+        $identifier = $gauge->getIdentifier();
+        if (!isset($this->gaugesData[$identifier])) {
+            throw new \InvalidArgumentException(sprintf('failed updating unknown gauge %s (%s)', $gauge->getName(), $identifier), 1574257469);
+        }
+
+        $encodedLabels = $this->encodeLabels($update->getLabels());
+        $value = $this->gaugesData[$identifier]['values'][$encodedLabels] ?? 0;
+
+        switch ($update->getOperation()) {
+            case StorageInterface::OPERATION_INCREASE:
+                $value += $update->getValue();
+            break;
+            case StorageInterface::OPERATION_SET:
+                $value = $update->getValue();
+            break;
+            case StorageInterface::OPERATION_DECREASE:
+                $value -= $update->getValue();
+            break;
+        }
+        $this->gaugesData[$identifier]['values'][$encodedLabels] = $value;
     }
 
     /**

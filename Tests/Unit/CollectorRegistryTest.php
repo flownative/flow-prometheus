@@ -80,8 +80,11 @@ class CollectorRegistryTest extends UnitTestCase
 
         $registry->register('flownative_prometheus_test_calls_total', Counter::TYPE);
         self::assertNotNull($registry->getCounter('flownative_prometheus_test_calls_total'));
+
         $registry->unregister('flownative_prometheus_test_calls_total');
-        self::assertNull($registry->getCounter('flownative_prometheus_test_calls_total'));
+
+        $this->expectExceptionCode(1574259838);
+        $registry->getCounter('flownative_prometheus_test_calls_total');
     }
 
     /**

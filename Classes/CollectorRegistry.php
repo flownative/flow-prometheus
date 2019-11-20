@@ -97,17 +97,23 @@ class CollectorRegistry
      * @param string $name
      * @return Counter
      */
-    public function getCounter(string $name): ?Counter
+    public function getCounter(string $name): Counter
     {
-        return $this->counters[$name] ?? null;
+        if (!isset($this->counters[$name])) {
+            throw new \RuntimeException(sprintf('unknown counter %s', $name), 1574259838);
+        }
+        return $this->counters[$name];
     }
 
     /**
      * @param string $name
-     * @return Gauge|null
+     * @return Gauge
      */
-    public function getGauge(string $name): ?Gauge
+    public function getGauge(string $name): Gauge
     {
-        return $this->gauges[$name] ?? null;
+        if (!isset($this->gauges[$name])) {
+            throw new \RuntimeException(sprintf('unknown gauge %s', $name), 1574259870);
+        }
+        return $this->gauges[$name];
     }
 }

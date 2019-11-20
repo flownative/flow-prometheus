@@ -91,8 +91,7 @@ class RedisStorage extends AbstractStorage
      */
     public function collect(): array
     {
-        $sampleCollections = $this->collectCounters();
-        return $sampleCollections;
+        return $this->collectCountersAndGauges();
     }
 
     /**
@@ -140,7 +139,6 @@ class RedisStorage extends AbstractStorage
 
         switch ($update->getOperation()) {
             case StorageInterface::OPERATION_INCREASE:
-                $value = (float)$update->getValue();
                 $this->redis->hIncrByFloat(
                     $counter->getIdentifier(),
                     $this->encodeLabels($update->getLabels()),
@@ -161,36 +159,75 @@ class RedisStorage extends AbstractStorage
     }
 
     /**
+     * @param Gauge $gauge
+     * @param GaugeUpdate $update
+     * @return void
+     */
+    public function updateGauge(Gauge $gauge, GaugeUpdate $update): void
+    {
+        $identifier = $gauge->getIdentifier();
+        if (!isset($this->gauges[$identifier])) {
+            throw new \InvalidArgumentException(sprintf('failed updating unknown gauge %s (%s)', $gauge->getName(), $identifier), 1574259278);
+        }
+
+        switch ($update->getOperation()) {
+            case StorageInterface::OPERATION_INCREASE:
+                $this->redis->hIncrByFloat(
+                    $gauge->getIdentifier(),
+                    $this->encodeLabels($update->getLabels()),
+                    $update->getValue()
+                );
+            break;
+            case StorageInterface::OPERATION_SET:
+                $this->redis->hSet(
+                    $gauge->getIdentifier(),
+                    $this->encodeLabels($update->getLabels()),
+                    $update->getValue()
+                );
+            break;
+        }
+
+        $this->redis->hSet($gauge->getIdentifier(), '__name', $gauge->getName());
+        $this->redis->sAdd($this->keyPrefix . Gauge::TYPE . self::KEY_SUFFIX, $gauge->getIdentifier());
+    }
+
+    /**
      * @return SampleCollection[]
      */
-    private function collectCounters(): array
+    private function collectCountersAndGauges(): array
     {
-        $keys = $this->redis->sMembers($this->keyPrefix . Counter::TYPE . self::KEY_SUFFIX);
-        sort($keys);
         $sampleCollections = [];
-        foreach ($keys as $key) {
-            $counterRawHash = $this->redis->hGetAll($key);
-            $counterName = $counterRawHash['__name'];
-            unset($counterRawHash['__name']);
+        foreach ([Counter::TYPE, Gauge::TYPE] as $collectorType) {
+            $collectorKeys = $this->redis->sMembers($this->keyPrefix . $collectorType . self::KEY_SUFFIX);
+            sort($collectorKeys);
+            foreach ($collectorKeys as $collectorKey) {
+                $collectorRawHash = $this->redis->hGetAll($collectorKey);
+                $collectorName = $collectorRawHash['__name'];
+                unset($collectorRawHash['__name']);
 
-            $samples = [];
-            foreach ($counterRawHash as $k => $value) {
-                $value = (strpos($value,'.') !== false) ? (float)$value : (int)$value;
-                $samples[] = new Sample(
-                    $counterName,
-                    $this->decodeLabels($k),
-                    $value
-                );
+                $samples = [];
+                foreach ($collectorRawHash as $sampleKey => $value) {
+                    $value = (strpos($value,'.') !== false) ? (float)$value : (int)$value;
+                    $samples[] = new Sample(
+                        $collectorName,
+                        $this->decodeLabels($sampleKey),
+                        $value
+                    );
+                }
+                $this->sortSamples($samples);
+
+                $collector =  $this->counters[$collectorKey] ?? $this->gauges[$collectorKey] ?? null;
+                if ($collector) {
+                    $sampleCollections[$collectorKey] = new SampleCollection(
+                        $collectorName,
+                        $collectorType,
+                        $collector->getHelp(),
+                        $collector->getLabels(),
+                        $samples
+                    );
+
+                }
             }
-            $this->sortSamples($samples);
-
-            $sampleCollections[$key] = new SampleCollection(
-                $counterName,
-                Counter::TYPE,
-                $this->counters[$key]->getHelp(),
-                $this->counters[$key]->getLabels(),
-                $samples
-            );
         }
         return $sampleCollections;
     }

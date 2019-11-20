@@ -34,15 +34,29 @@ class RendererTest extends UnitTestCase
             new SampleCollection(
                 'metric_without_timestamp_and_labels',
                 Gauge::TYPE,
-                '',
+                'A test gauge',
                 [],
                 [
                     new Sample('metric_without_timestamp_and_labels', [], 12.47)
+                ]
+            ),
+            new SampleCollection(
+                'counter_without_timestamp_and_labels',
+                Counter::TYPE,
+                'A test counter',
+                [],
+                [
+                    new Sample('counter_without_timestamp_and_labels', [], 42)
                 ]
             )
         ];
 
         $expectedOutput = <<<EOD
+# HELP counter_without_timestamp_and_labels A test counter
+# TYPE counter_without_timestamp_and_labels counter
+counter_without_timestamp_and_labels 42
+
+# HELP metric_without_timestamp_and_labels A test gauge
 # TYPE metric_without_timestamp_and_labels gauge
 metric_without_timestamp_and_labels 12.47
 EOD;

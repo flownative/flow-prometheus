@@ -9,8 +9,10 @@ namespace Flownative\Prometheus\Tests\Unit;
  */
 
 use Flownative\Prometheus\Collector\Counter;
+use Flownative\Prometheus\Collector\Gauge;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\Storage\CounterUpdate;
+use Flownative\Prometheus\Storage\GaugeUpdate;
 use Flownative\Prometheus\Storage\InMemoryStorage;
 use Flownative\Prometheus\Storage\StorageInterface;
 use Neos\Flow\Tests\UnitTestCase;
@@ -162,5 +164,23 @@ abstract class AbstractStorageTest extends UnitTestCase
         self::assertSame($samplesB[0]->getValue(), 5.75);
     }
 
+    /**
+     * @test
+     */
+    public function updateGaugeIncreasesGaugeByGivenValue(): void
+    {
+        $gauge = new Gauge($this->storage, 'test_gauge');
+        $this->storage->registerCollector($gauge);
 
+        $this->storage->updateGauge($gauge, new GaugeUpdate(StorageInterface::OPERATION_INCREASE, 6, []));
+        $this->storage->updateGauge($gauge, new GaugeUpdate(StorageInterface::OPERATION_INCREASE, 4, []));
+        $this->storage->updateGauge($gauge, new GaugeUpdate(StorageInterface::OPERATION_INCREASE, 2.5, []));
+        $sampleCollections = $this->storage->collect();
+
+        self::assertCount(1, $sampleCollections);
+
+        $samples = $sampleCollections[$gauge->getIdentifier()]->getSamples();
+        self::assertCount(1, $samples);
+        self::assertSame($samples[0]->getValue(), 12.5);
+    }
 }

@@ -43,8 +43,9 @@ class Renderer
             foreach ($sampleCollection->getSamples() as $sample) {
                 $lines[] = $this->renderSample($sampleCollection, $sample);
             }
+            $lines[] = '';
         }
-        return implode("\n", $lines);
+        return trim(implode("\n", $lines));
     }
 
     /**

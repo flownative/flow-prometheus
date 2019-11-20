@@ -9,12 +9,14 @@ namespace Flownative\Prometheus\Storage;
  */
 
 use Flownative\Prometheus\Collector\Counter;
+use Flownative\Prometheus\Collector\Gauge;
 use Flownative\Prometheus\SampleCollection;
 
 interface StorageInterface
 {
     public const OPERATION_INCREASE = 'i';
     public const OPERATION_SET = 's';
+    public const OPERATION_DECREASE = 'd';
 
     /**
      * @return SampleCollection[]
@@ -37,4 +39,11 @@ interface StorageInterface
      * @return void
      */
     public function updateCounter(Counter $counter, CounterUpdate $update): void;
+
+    /**
+     * @param Gauge $gauge
+     * @param GaugeUpdate $update
+     * @return void
+     */
+    public function updateGauge(Gauge $gauge, GaugeUpdate $update): void;
 }
