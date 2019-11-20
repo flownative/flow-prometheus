@@ -2,12 +2,22 @@
 [![Packagist](https://img.shields.io/packagist/v/flownative/prometheus.svg)](https://packagist.org/packages/flownative/prometheus)
 [![Maintenance level: Love](https://img.shields.io/badge/maintenance-%E2%99%A1%E2%99%A1%E2%99%A1-ff69b4.svg)](https://www.flownative.com/en/products/open-source.html)
 
-# Prometheus integration for Neos Flow
+# Prometheus client library for Neos Flow / PHP
 
 This [Flow](https://flow.neos.io) package allows you to collect and provide metrics to [Prometheus](https://www.prometheus.io). 
+It supports client-side aggregation of metrics data and provides an endpoint for Prometheus for scraping these metrics.  
 
-## Key Features
+## How does it work?
 
+Your Flow application can provide different kinds of metrics, for example the current number of registered users (a gauge) or 
+the number of requests to your API (a counter). Metrics values are stored in a storage – currently only Redis is supported, and
+there's an in-memory storage for testing.
+
+The metrics endpoint (currently hardcoded at http(s)://your-host/metrics) collects all current metric values from the storage
+and renders it in a format which can be read by Prometheus. Therefore, metrics are _not_ collected or generated during a request
+to the metrics endpoint. Depending on how expensive it is to update a metric (think: number of incoming HTTP requests vs. books 
+sold but returned throughout the last 15 years), the values may be updated on the fly (e.g. by registering a Flow HTTP Component)
+or through a helper process (a cron-job or long-running command-line process).
 
 ## Installation
 
@@ -15,9 +25,99 @@ The Prometheus integration is installed as a regular Flow package via Composer. 
 `flownative/prometheus` into the dependencies of your Flow or Neos distribution:
 
 ```bash
-$ composer require flownative/prometheus:1.*
+$ composer require flownative/prometheus:0.*
 ```
 
 ## Configuration
 
-…
+By default, the `InMemoryStorage` will be used. You will want to use the `RedisStorage` instead, so you don't loose all metrics
+values between requests.
+
+In order to use the `RedisStorage`, create an `Objects.yaml` in your package's or Flow distribution's `Configuration` directory
+and add the following configuration:
+
+```yaml
+Flownative\Prometheus\DefaultCollectorRegistry:
+  arguments:
+    1:
+      object: Flownative\Prometheus\Storage\RedisStorage
+
+Flownative\Prometheus\Storage\RedisStorage:
+  arguments:
+    1:
+      value:
+        hostname: '%env:MY_REDIS_HOST%'
+        port: '%env:MY_REDIS_PORT%'
+        password: '%env:MY_REDIS_PASSWORD%'
+        database: 20
+```
+
+In this example, environment variables are used for passing access parameters to the `RedisStorage`. Test your setup by opening the 
+path `/metrics` of your Flow instance in a browser. You should see the following comment:
+
+```
+# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.
+```
+
+## Usage
+
+The `DefaultCollectorRegistry` is pre-configured and can be injected via Dependency Injection:
+
+```php
+    /**
+     * @Flow\Inject
+     * @var \Flownative\Prometheus\CollectorRegistry\DefaultCollectorRegistry
+     */
+    protected $collectorRegistry;
+```
+
+A simple counter:
+
+```php
+    $this->collectorRegistry->getCounter('acme_myproject_controller_hits_total')
+        ->inc();   
+```
+
+A counter using labels:
+
+```php
+    $this->collectorRegistry->getCounter('acme_myproject_controller_hits_total')
+        ->inc(1, ['result' => 'success']);   
+    …
+    $this->collectorRegistry->getCounter('acme_myproject_controller_hits_total')
+        ->inc(1, ['result' => 'failed']);   
+```
+
+A gauge:
+
+```php
+    $this->collectorRegistry->getGauge('neos_flow_sessions')
+        ->set(count($this->sessionManager->getActiveSessions()),
+            [
+                'state' => 'active'
+            ]
+        );
+```
+
+Manual usage of the Collector Registry, using the `InMemoryStorage`:
+
+````php
+    $registry = new CollectorRegistry(new InMemoryStorage());
+    $registry->register('flownative_prometheus_test_calls_total', Counter::TYPE, 'a test call counter', ['tests', 'counter']);
+
+    $counter = $registry->getCounter('flownative_prometheus_test_calls_total');
+    $counter->inc(5.5);
+
+    $sampleCollections = $registry->collect();
+
+    $renderer = new Renderer();
+    echo ($renderer->render($sampleCollections));
+````
+
+## Running the tests
+
+All key features are backed by unit tests. Currently you need Redis running in order to run them. Provide
+the necessary credentials via `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` (see `Objects.yaml` contained
+in this package).
+
+Apart from that, tests are run like any other unit test suite for Flow.
