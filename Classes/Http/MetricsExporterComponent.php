@@ -15,6 +15,7 @@ use Neos\Flow\Http\Component\ComponentContext;
 use Neos\Flow\Http\Component\ComponentInterface;
 use Neos\Flow\Http\ContentStream;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * HTTP component which renders Prometheus metrics
@@ -25,6 +26,11 @@ class MetricsExporterComponent implements ComponentInterface
      * @var CollectorRegistry
      */
     protected $collectorRegistry;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * @var array
@@ -54,6 +60,14 @@ class MetricsExporterComponent implements ComponentInterface
     public function injectCollectorRegistry(CollectorRegistry $collectorRegistry): void
     {
         $this->collectorRegistry = $collectorRegistry;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function injectLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 
     /**
@@ -113,12 +127,30 @@ class MetricsExporterComponent implements ComponentInterface
     private function authenticateWithBasicAuth(ComponentContext $componentContext): bool
     {
         $authorizationHeaders = $componentContext->getHttpRequest()->getHeader('Authorization');
-        if (count($authorizationHeaders) !== 1) {
+
+        // For backwards-compatibility with Flow < 6.x:
+        if ($authorizationHeaders === null) {
+            $authorizationHeaders = [];
+        } elseif (is_string($authorizationHeaders)) {
+            $authorizationHeaders = [$authorizationHeaders];
+        }
+
+        if ($authorizationHeaders === []) {
+            $this->logger->info('No authorization header found, asking for authentication for Prometheus telemetry endpoint');
             return false;
         }
-        $authorizationHeader = $authorizationHeaders[0];
 
-        if (strpos($authorizationHeader, 'Basic ') !== 0) {
+        foreach ($authorizationHeaders as $possibleAuthorizationHeader) {
+            if (strpos($possibleAuthorizationHeader, 'Basic ') === 0) {
+                $authorizationHeader = $possibleAuthorizationHeader;
+                break;
+            }
+        }
+
+        if (!isset($authorizationHeader)) {
+            if ($this->logger) {
+                $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint, no "Basic" authorization header found');
+            }
             return false;
         }
 
@@ -130,10 +162,10 @@ class MetricsExporterComponent implements ComponentInterface
             $givenPassword !== $this->options['basicAuth']['password']
         ) {
             $componentContext->replaceHttpResponse($componentContext->getHttpResponse()->withStatus(403));
+            $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint: wrong username or password');
             return false;
         }
 
         return true;
     }
-
 }
