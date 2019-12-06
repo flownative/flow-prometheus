@@ -136,7 +136,9 @@ class MetricsExporterComponent implements ComponentInterface
         }
 
         if ($authorizationHeaders === []) {
-            $this->logger->info('No authorization header found, asking for authentication for Prometheus telemetry endpoint');
+            if ($this->logger) {
+                $this->logger->info('No authorization header found, asking for authentication for Prometheus telemetry endpoint');
+            }
             return false;
         }
 
@@ -162,7 +164,9 @@ class MetricsExporterComponent implements ComponentInterface
             $givenPassword !== $this->options['basicAuth']['password']
         ) {
             $componentContext->replaceHttpResponse($componentContext->getHttpResponse()->withStatus(403));
-            $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint: wrong username or password');
+            if ($this->logger) {
+                $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint: wrong username or password');
+            }
             return false;
         }
 
