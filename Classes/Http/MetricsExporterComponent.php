@@ -26,7 +26,20 @@ class MetricsExporterComponent implements ComponentInterface
     protected $collectorRegistry;
 
     /**
-     * Note: In an Objects.yaml this injection is pre-defined to inject the DefaultCollectorRegisry
+     * @var array
+     */
+    protected $options;
+
+    /**
+     * @param array $options
+     */
+    public function __construct(array $options = array())
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * Note: In an Objects.yaml this injection is pre-defined to inject the DefaultCollectorRegistry
      *
      * @param CollectorRegistry $collectorRegistry
      */
@@ -40,7 +53,7 @@ class MetricsExporterComponent implements ComponentInterface
      */
     public function handle(ComponentContext $componentContext): void
     {
-        if ($componentContext->getHttpRequest()->getUri()->getPath() !== '/metrics') {
+        if ($componentContext->getHttpRequest()->getUri()->getPath() !== $this->options['telemetryPath']) {
             return;
         }
 

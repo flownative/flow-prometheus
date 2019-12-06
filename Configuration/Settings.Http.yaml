@@ -7,4 +7,7 @@ Neos:
             'Flownative.Prometheus:metricsExporter':
               'position': 'before routing'
               component: 'Flownative\Prometheus\Http\MetricsExporterComponent'
-              componentOptions: []
+              componentOptions:
+
+                ## Path at which metrics are published for scraping
+                telemetryPath: '/metrics'

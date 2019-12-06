@@ -13,7 +13,7 @@ Your Flow application can provide different kinds of metrics, for example the cu
 the number of requests to your API (a counter). Metrics values are stored in a storage – currently only Redis is supported, and
 there's an in-memory storage for testing.
 
-The metrics endpoint (currently hardcoded at http(s)://your-host/metrics) collects all current metric values from the storage
+The metrics endpoint (by default http(s)://your-host/metrics) collects all current metric values from the storage
 and renders it in a format which can be read by Prometheus. Therefore, metrics are _not_ collected or generated during a request
 to the metrics endpoint. Depending on how expensive it is to update a metric (think: number of incoming HTTP requests vs. books 
 sold but returned throughout the last 15 years), the values may be updated on the fly (e.g. by registering a Flow HTTP Component)
@@ -29,6 +29,8 @@ $ composer require flownative/prometheus:0.*
 ```
 
 ## Configuration
+
+### Storage
 
 By default, the `InMemoryStorage` will be used. You will want to use the `RedisStorage` instead, so you don't loose all metrics
 values between requests.
@@ -57,6 +59,23 @@ path `/metrics` of your Flow instance in a browser. You should see the following
 
 ```
 # Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.
+```
+
+### Metrics Endpoint Path
+
+The path, where metrics are provided for scraping, is "/metrics" by default. You can change this path by setting a respective
+option for the HTTP component:
+
+```yaml
+Neos:
+  Flow:
+    http:
+      chain:
+        'process':
+          chain:
+            'Flownative.Prometheus:metricsExporter':
+              componentOptions:
+                telemetryPath: '/some-other-path'
 ```
 
 ## Usage
