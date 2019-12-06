@@ -13,22 +13,21 @@ use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Http\MetricsExporterComponent;
 use Flownative\Prometheus\Storage\InMemoryStorage;
+use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\ServerRequest;
+use GuzzleHttp\Psr7\Uri;
 use Neos\Flow\Http\Component\ComponentChain;
 use Neos\Flow\Http\Component\ComponentContext;
-use Neos\Flow\Http\Request;
-use Neos\Flow\Http\Response;
-use Neos\Flow\Http\Uri;
 use Neos\Flow\Tests\UnitTestCase;
 
 class MetricsExporterComponentTest extends UnitTestCase
 {
     /**
      * @test
-     * @throws InvalidCollectorTypeException
      */
     public function componentIgnoresRequestsWithNonMatchingPath(): void
     {
-        $componentContext = new ComponentContext(Request::create(new Uri('http://localhost/foo')), new Response());
+        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/foo')), new Response());
         $componentContext->setParameter(ComponentChain::class, 'cancel', false);
 
         $httpComponent = new MetricsExporterComponent();
@@ -44,7 +43,7 @@ class MetricsExporterComponentTest extends UnitTestCase
      */
     public function componentRendersMetrics(): void
     {
-        $componentContext = new ComponentContext(Request::create(new Uri('http://localhost/metrics')), new Response());
+        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
         $componentContext->setParameter(ComponentChain::class, 'cancel', false);
 
         $storage = new InMemoryStorage();
@@ -64,16 +63,15 @@ test_counter 5
 EOD;
         self::assertTrue($componentContext->getParameter(ComponentChain::class, 'cancel'));
         self::assertSame($expectedOutput, $componentContext->getHttpResponse()->getBody()->getContents());
-        self::assertSame('text/plain; version=0.0.4; charset=UTF-8', $componentContext->getHttpResponse()->getHeader('Content-Type'));
+        self::assertSame('text/plain; version=0.0.4; charset=UTF-8', $componentContext->getHttpResponse()->getHeader('Content-Type')[0]);
     }
 
     /**
      * @test
-     * @throws InvalidCollectorTypeException
      */
     public function componentRendersCommentIfNoMetricsExist(): void
     {
-        $componentContext = new ComponentContext(Request::create(new Uri('http://localhost/metrics')), new Response());
+        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
 
         $httpComponent = new MetricsExporterComponent();
         $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
@@ -81,5 +79,22 @@ EOD;
 
         $expectedOutput = "# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.\n";
         self::assertSame($expectedOutput, $componentContext->getHttpResponse()->getBody()->getContents());
+    }
+
+    /**
+     * @test
+     */
+    public function telemetryPathIsConfigurable(): void
+    {
+        $httpComponent = new MetricsExporterComponent(['telemetryPath' => '/different-metrics']);
+        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+
+        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
+        $httpComponent->handle($componentContext);
+        self::assertEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+
+        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/different-metrics')), new Response());
+        $httpComponent->handle($componentContext);
+        self::assertNotEmpty($componentContext->getHttpResponse()->getBody()->getContents());
     }
 }

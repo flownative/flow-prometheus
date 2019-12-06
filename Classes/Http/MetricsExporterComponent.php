@@ -28,14 +28,16 @@ class MetricsExporterComponent implements ComponentInterface
     /**
      * @var array
      */
-    protected $options;
+    protected $options = [
+        'telemetryPath' => '/metrics'
+    ];
 
     /**
      * @param array $options
      */
     public function __construct(array $options = array())
     {
-        $this->options = $options;
+        $this->options = array_merge($this->options, $options);
     }
 
     /**
