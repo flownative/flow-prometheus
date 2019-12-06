@@ -97,4 +97,87 @@ EOD;
         $httpComponent->handle($componentContext);
         self::assertNotEmpty($componentContext->getHttpResponse()->getBody()->getContents());
     }
+
+    /**
+     * @test
+     */
+    public function componentRequiresHttpBasicAuthIfConfigured(): void
+    {
+        $httpComponent = new MetricsExporterComponent([
+            'basicAuth' => [
+                'username' => 'prometheus',
+                'password' => 'password',
+                'realm' => '👑'
+            ]
+        ]);
+        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+
+        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
+        $httpComponent->handle($componentContext);
+
+        $authenticateHeaders = $componentContext->getHttpResponse()->getHeader('WWW-Authenticate');
+        self::assertCount(1, $authenticateHeaders);
+        self::assertSame('Basic realm="👑", charset="UTF-8"', $authenticateHeaders[0]);
+    }
+
+    /**
+     * @test
+     */
+    public function componentAcceptsCorrectHttpBasicAuthIfConfigured(): void
+    {
+        $httpComponent = new MetricsExporterComponent([
+            'basicAuth' => [
+                'username' => 'prometheus',
+                'password' => 'password',
+                'realm' => '👑'
+            ]
+        ]);
+        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+
+        $componentContext = new ComponentContext(
+            new ServerRequest(
+                'GET',
+                new Uri('http://localhost/metrics'),
+                [
+                    'Authorization' => 'Basic ' . base64_encode('prometheus:password')
+                ]
+            ),
+            new Response()
+        );
+        $httpComponent->handle($componentContext);
+
+        $authenticateHeaders = $componentContext->getHttpResponse()->getHeader('WWW-Authenticate');
+        self::assertCount(0, $authenticateHeaders);
+        self::assertNotEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+    }
+
+    /**
+     * @test
+     */
+    public function componentDeniesIncorrectHttpBasicAuthIfConfigured(): void
+    {
+        $httpComponent = new MetricsExporterComponent([
+            'basicAuth' => [
+                'username' => 'prometheus',
+                'password' => 'password',
+                'realm' => '👑'
+            ]
+        ]);
+        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+
+        $componentContext = new ComponentContext(
+            new ServerRequest(
+                'GET',
+                new Uri('http://localhost/metrics'),
+                [
+                    'Authorization' => 'Basic ' . base64_encode('prometheus:wrong-password')
+                ]
+            ),
+            new Response()
+        );
+        $httpComponent->handle($componentContext);
+
+        self::assertSame(403, $componentContext->getHttpResponse()->getStatusCode());
+        self::assertEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+    }
 }

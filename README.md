@@ -61,7 +61,7 @@ path `/metrics` of your Flow instance in a browser. You should see the following
 # Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.
 ```
 
-### Metrics Endpoint Path
+### Telemetry Path
 
 The path, where metrics are provided for scraping, is "/metrics" by default. You can change this path by setting a respective
 option for the HTTP component:
@@ -76,6 +76,29 @@ Neos:
             'Flownative.Prometheus:metricsExporter':
               componentOptions:
                 telemetryPath: '/some-other-path'
+```
+
+### Security
+
+The telemetry endpoint can be protected by requiring clients to authenticate first with username and password. HTTP Basic Authentication is configured as follows:
+
+```yaml
+Neos:
+  Flow:
+    http:
+      chain:
+        'process':
+          chain:
+            'Flownative.Prometheus:metricsExporter':
+              componentOptions:
+                basicAuth:
+
+                  # If set to non-empty values, HTTP Basic Auth is enabled:
+                  username: 'my-username'
+                  password: 'my-password'
+
+                  # Optional:
+                  realm: 'Acme App Metrics'
 ```
 
 ## Usage

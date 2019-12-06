@@ -11,3 +11,8 @@ Neos:
 
                 ## Path at which metrics are published for scraping
                 telemetryPath: '/metrics'
+
+                basicAuth:
+                  username: ''
+                  password: ''
+                  realm: 'Flownative Prometheus Plugin'
