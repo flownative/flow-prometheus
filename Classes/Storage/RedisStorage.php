@@ -11,11 +11,10 @@ namespace Flownative\Prometheus\Storage;
 use Flownative\Prometheus\Collector\AbstractCollector;
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
-use Flownative\Prometheus\Exception\ConnectionException;
 use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
-use Redis;
+use Predis;
 
 /**
  * A storage which stores metrics in Redis using the phpredis PHP extension.
@@ -38,7 +37,7 @@ class RedisStorage extends AbstractStorage
     protected $gauges;
 
     /**
-     * @var Redis
+     * @var Predis\Client
      */
     protected $redis;
 
@@ -51,6 +50,16 @@ class RedisStorage extends AbstractStorage
      * @var integer
      */
     protected $port = 6379;
+
+    /**
+     * @var array
+     */
+    protected $sentinels = [];
+
+    /**
+     * @var string
+     */
+    protected $service = 'mymaster';
 
     /**
      * @var integer
@@ -69,18 +78,32 @@ class RedisStorage extends AbstractStorage
 
     /**
      * @param array $options
-     * @throws ConnectionException
      * @throws InvalidConfigurationException
      */
     public function __construct(array $options = [])
     {
         foreach ($options as $key => $value) {
-            if (in_array($key, ['hostname', 'password', 'keyPrefix'])) {
-                $this->$key = (string)$value;
-            } elseif (in_array($key, ['database', 'port'])) {
-                $this->$key = (int)$value;
-            } else {
-                throw new InvalidConfigurationException(sprintf('invalid configuration option "%s" for Prometheus RedisStorage', $key), 1574176047);
+            switch ($key) {
+                case 'hostname':
+                case 'password':
+                case 'keyPrefix':
+                    $this->$key = (string)$value;
+                break;
+                case 'sentinels':
+                    if (is_string($value)) {
+                        $this->sentinels = explode(',', $value);
+                    } elseif(is_array($value)) {
+                        $this->sentinels = $value;
+                    } else {
+                        throw new \InvalidArgumentException(sprintf('setSentinels(): Invalid type %s, string or array expected', gettype($value)), 1575969465);
+                    }
+                break;
+                case 'database':
+                case 'port':
+                    $this->$key = (int)$value;
+                break;
+                default:
+                    throw new InvalidConfigurationException(sprintf('invalid configuration option "%s" for Prometheus RedisStorage', $key), 1574176047);
             }
         }
         $this->redis = $this->getRedisClient();
@@ -155,7 +178,7 @@ class RedisStorage extends AbstractStorage
         }
 
         $this->redis->hSet($counter->getIdentifier(), '__name', $counter->getName());
-        $this->redis->sAdd($this->keyPrefix . Counter::TYPE . self::KEY_SUFFIX, $counter->getIdentifier());
+        $this->redis->sAdd($this->keyPrefix . Counter::TYPE . self::KEY_SUFFIX, [$counter->getIdentifier()]);
     }
 
     /**
@@ -188,7 +211,7 @@ class RedisStorage extends AbstractStorage
         }
 
         $this->redis->hSet($gauge->getIdentifier(), '__name', $gauge->getName());
-        $this->redis->sAdd($this->keyPrefix . Gauge::TYPE . self::KEY_SUFFIX, $gauge->getIdentifier());
+        $this->redis->sAdd($this->keyPrefix . Gauge::TYPE . self::KEY_SUFFIX, [$gauge->getIdentifier()]);
     }
 
     /**
@@ -233,31 +256,28 @@ class RedisStorage extends AbstractStorage
     }
 
     /**
-     * @return Redis
-     * @throws ConnectionException
+     * @return Predis\Client
      */
-    private function getRedisClient(): Redis
+    private function getRedisClient(): Predis\Client
     {
-        if (strpos($this->hostname, '/') !== false) {
-            $this->port = null;
-        }
-        $redis = new Redis();
+        $options = [
+            'parameters' => [
+                'database' => $this->database
+            ]
+        ];
 
-        try {
-            $connected = false;
-            // keep the above! the line below leave the variable undefined if an error occurs.
-            $connected = $redis->connect($this->hostname, $this->port);
-        } finally {
-            if ($connected === false) {
-                throw new ConnectionException(sprintf('failed connecting to Redis at %s:%s', $this->hostname, $this->port), 1574175735);
-            }
+        if (!empty($this->password)) {
+            $options['parameters']['password'] = $this->password;
         }
 
-        if (($this->password !== '') && !$redis->auth($this->password)) {
-            throw new ConnectionException(sprintf('failed authenticating with Redis at %s:%s', $this->hostname, $this->port), 1574175808);
+        if ($this->sentinels !== []) {
+            $connectionParameters = $this->sentinels;
+            $options['replication'] = 'sentinel';
+            $options['service'] = $this->service;
+        } else {
+            $connectionParameters = 'tcp://' . $this->hostname . ':' . $this->port;
         }
-        $redis->select($this->database);
-        return $redis;
+        return new Predis\Client($connectionParameters, $options);
     }
 
     /**

@@ -33,7 +33,8 @@ $ composer require flownative/prometheus:0.*
 ### Storage
 
 By default, the `InMemoryStorage` will be used. You will want to use the `RedisStorage` instead, so you don't loose all metrics
-values between requests.
+values between requests. The `RedisStorage` contained in this package does *not* require a special PHP extension, as it is implemented
+in plain PHP.
 
 In order to use the `RedisStorage`, create an `Objects.yaml` in your package's or Flow distribution's `Configuration` directory
 and add the following configuration:
@@ -60,6 +61,25 @@ path `/metrics` of your Flow instance in a browser. You should see the following
 ```
 # Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.
 ```
+
+The `RedisStorage` also supports Redis cluster setups with Sentinel servers. If you'd like to connect to a cluster and use Sentinels
+for autodiscovery, omit the hostname and password options and use the sentinel option instead:
+
+```yaml
+Flownative\Prometheus\Storage\RedisStorage:
+  arguments:
+    1:
+      value:
+        password: '%env:MY_REDIS_PASSWORD%'
+        database: 20
+        sentinels:
+          - 'tcp://10.101.213.145:26379'
+          - 'tcp://10.101.213.146:26379'
+          - 'tcp://10.101.213.147:26379'
+        service: 'mymaster'
+```
+
+Instead of providing sentinels as an array you can also set them as a comma-separated string.
 
 ### Telemetry Path
 

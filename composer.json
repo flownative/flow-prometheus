@@ -16,8 +16,6 @@
         "ext-zlib": "*",
         "predis/predis": "^1.1"
     },
-    "suggest": {
-    },
     "autoload": {
         "psr-4": {
             "Flownative\\Prometheus\\": "Classes"

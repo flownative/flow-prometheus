@@ -19,10 +19,6 @@ class RedisStorageTest extends AbstractStorageTest
      */
     public function setUp(): void
     {
-        if (!class_exists('Redis')) {
-            self::markTestSkipped('No "Redis" class found, skipping test');
-            return;
-        }
         parent::setUp();
         $this->storage = new RedisStorage([
             'hostname' => getenv('REDIS_HOST') ?? '127.0.0.1',
