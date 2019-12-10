@@ -21,7 +21,11 @@ abstract class AbstractStorage implements StorageInterface
     protected function encodeLabels(array $labels): string
     {
         ksort($labels);
-        return base64_encode(json_encode($labels, JSON_THROW_ON_ERROR, 512));
+        $encodedLabels = json_encode($labels);
+        if ($encodedLabels === false) {
+            throw new \Exception(json_last_error());
+        }
+        return base64_encode($encodedLabels);
     }
 
     /**
@@ -30,7 +34,11 @@ abstract class AbstractStorage implements StorageInterface
      */
     protected function decodeLabels(string $encodedLabels): array
     {
-        return json_decode(base64_decode($encodedLabels), true, 512, JSON_THROW_ON_ERROR);
+        $decodedLabels = json_decode(base64_decode($encodedLabels), true);
+        if ($decodedLabels === NULL) {
+            throw new \Exception(json_last_error());
+        }
+        return $decodedLabels;
     }
 
     /**
