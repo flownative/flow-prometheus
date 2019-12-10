@@ -12,10 +12,11 @@
         }
     ],
     "require": {
-        "neos/flow": "5.* || 6.* || @dev"
+        "neos/flow": "5.* || 6.* || @dev",
+        "ext-zlib": "*",
+        "predis/predis": "^1.1"
     },
     "suggest": {
-        "ext-redis": "If you have a Redis server and want to use it as a storage."
     },
     "autoload": {
         "psr-4": {
