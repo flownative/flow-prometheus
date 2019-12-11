@@ -87,6 +87,7 @@ class RedisStorage extends AbstractStorage
                 case 'hostname':
                 case 'password':
                 case 'keyPrefix':
+                case 'service':
                     $this->$key = (string)$value;
                 break;
                 case 'sentinels':
