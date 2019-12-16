@@ -22,5 +22,11 @@
             "Flownative\\Prometheus\\": "Classes"
         }
     },
-    "extra": {}
+    "extra": {
+        "neos": {
+            "installer-resource-folders": [
+                "Resources/Private/Installer/"
+            ]
+        }
+    }
 }
