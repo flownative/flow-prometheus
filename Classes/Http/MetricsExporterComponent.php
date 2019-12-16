@@ -75,11 +75,16 @@ class MetricsExporterComponent implements ComponentInterface
      */
     public function handle(ComponentContext $componentContext): void
     {
-        if ($componentContext->getHttpRequest()->getUri()->getPath() !== $this->options['telemetryPath']) {
+        if (getenv('FLOWNATIVE_PROMETHEUS_ENABLE') !== 'true') {
             return;
         }
 
         $componentContext->setParameter(ComponentChain::class, 'cancel', true);
+
+        if ($componentContext->getHttpRequest()->getUri()->getPath() !== $this->options['telemetryPath']) {
+            $componentContext->replaceHttpResponse($componentContext->getHttpResponse()->withStatus(400, 'Bad Request (Flownative Prometheus Metrics)'));
+            return;
+        }
 
         if ($this->options['basicAuth']['username'] !== '' && $this->options['basicAuth']['password'] !== '') {
             if ($this->authenticateWithBasicAuth($componentContext) === false) {

@@ -100,7 +100,13 @@ Neos:
 
 ### Security
 
-The telemetry endpoint can be protected by requiring clients to authenticate first with username and password. HTTP Basic Authentication is configured as follows:
+By default, the telemetry endpoint is *not* active. It is active when the environment variable `FLOWNATIVE_PROMETHEUS_ENABLE` is set to "true" (ie. "true" is a string value!).
+You can achieve this by setting the variable in your webserver's virtual host configuration.
+
+The idea behind enabling telemetry through such a variable is, that you configure your webserver to provide metrics through a different port than your actual website or application.
+This way its easy to hide metrics through firewall rules or by not providing access to that port through your load balancer. 
+
+The telemetry endpoint can also be protected by requiring clients to authenticate first with username and password. HTTP Basic Authentication is configured as follows:
 
 ```yaml
 Neos:

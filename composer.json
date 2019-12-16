@@ -21,12 +21,5 @@
         "psr-4": {
             "Flownative\\Prometheus\\": "Classes"
         }
-    },
-    "extra": {
-        "neos": {
-            "installer-resource-folders": [
-                "Resources/Private/Installer/"
-            ]
-        }
     }
 }
