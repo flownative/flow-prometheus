@@ -81,6 +81,21 @@ Flownative\Prometheus\Storage\RedisStorage:
 
 Instead of providing sentinels as an array you can also set them as a comma-separated string.
 
+The `RedisStorage` can be configured to ignore connection errors. This may protect your application against fatal errors at times  
+when Redis is not available. Of course, no metrics are stored while Redis connections fail.  
+
+```yaml
+Flownative\Prometheus\Storage\RedisStorage:
+  arguments:
+    1:
+      value:
+        hostname: '%env:MY_REDIS_HOST%'
+        port: '%env:MY_REDIS_PORT%'
+        password: '%env:MY_REDIS_PASSWORD%'
+        database: 20
+        ignoreConnectionErrors: true
+```
+
 ### Telemetry Path
 
 The path, where metrics are provided for scraping, is "/metrics" by default. You can change this path by setting a respective

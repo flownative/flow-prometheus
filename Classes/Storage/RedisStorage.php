@@ -8,6 +8,7 @@ namespace Flownative\Prometheus\Storage;
  * (c) Flownative GmbH - www.flownative.com
  */
 
+use Exception;
 use Flownative\Prometheus\Collector\AbstractCollector;
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
@@ -15,6 +16,7 @@ use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
 use Predis;
+use Predis\Connection\ConnectionException;
 
 /**
  * A storage which stores metrics in Redis using the phpredis PHP extension.
@@ -77,6 +79,11 @@ class RedisStorage extends AbstractStorage
     protected $keyPrefix = 'flownative_prometheus';
 
     /**
+     * @var boolean
+     */
+    protected $ignoreConnectionErrors = false;
+
+    /**
      * @param array $options
      * @throws InvalidConfigurationException
      */
@@ -90,11 +97,16 @@ class RedisStorage extends AbstractStorage
                 case 'service':
                     $this->$key = (string)$value;
                 break;
+                case 'ignoreConnectionErrors':
+                    $this->$key = ($value === true || $value === 'yes' || $value === 'true' || $value === 'on' || $value === 1);
+                break;
                 case 'sentinels':
                     if (is_string($value)) {
                         $this->sentinels = explode(',', $value);
-                    } elseif(is_array($value)) {
+                    } elseif (is_array($value)) {
                         $this->sentinels = $value;
+                    } elseif (empty($value)) {
+                        $this->sentinels = [];
                     } else {
                         throw new \InvalidArgumentException(sprintf('setSentinels(): Invalid type %s, string or array expected', gettype($value)), 1575969465);
                     }
@@ -112,18 +124,33 @@ class RedisStorage extends AbstractStorage
 
     /**
      * @return SampleCollection[]
+     * @throws Exception
      */
     public function collect(): array
     {
-        return $this->collectCountersAndGauges();
+        try {
+            return $this->collectCountersAndGauges();
+        } catch (ConnectionException $exception) {
+            if ($this->ignoreConnectionErrors === false) {
+                throw $exception;
+            }
+            return [];
+        }
     }
 
     /**
      * @return void
+     * @throws ConnectionException
      */
     public function flush(): void
     {
-        $this->redis->flushDB();
+        try {
+            $this->redis->flushDB();
+        } catch (ConnectionException $exception) {
+            if ($this->ignoreConnectionErrors === false) {
+                throw $exception;
+            }
+        }
     }
 
     /**
@@ -153,6 +180,7 @@ class RedisStorage extends AbstractStorage
      * @param Counter $counter
      * @param CounterUpdate $update
      * @return void
+     * @throws Exception
      */
     public function updateCounter(Counter $counter, CounterUpdate $update): void
     {
@@ -161,31 +189,38 @@ class RedisStorage extends AbstractStorage
             throw new \InvalidArgumentException(sprintf('failed updating unknown counter %s (%s)', $counter->getName(), $identifier), 1574079998);
         }
 
-        switch ($update->getOperation()) {
-            case StorageInterface::OPERATION_INCREASE:
-                $this->redis->hIncrByFloat(
-                    $counter->getIdentifier(),
-                    $this->encodeLabels($update->getLabels()),
-                    $update->getValue()
-                );
-            break;
-            case StorageInterface::OPERATION_SET:
-                $this->redis->hSet(
-                    $counter->getIdentifier(),
-                    $this->encodeLabels($update->getLabels()),
-                    $update->getValue()
-                );
-            break;
-        }
+        try {
+            switch ($update->getOperation()) {
+                case StorageInterface::OPERATION_INCREASE:
+                    $this->redis->hIncrByFloat(
+                        $counter->getIdentifier(),
+                        $this->encodeLabels($update->getLabels()),
+                        $update->getValue()
+                    );
+                break;
+                case StorageInterface::OPERATION_SET:
+                    $this->redis->hSet(
+                        $counter->getIdentifier(),
+                        $this->encodeLabels($update->getLabels()),
+                        $update->getValue()
+                    );
+                break;
+            }
 
-        $this->redis->hSet($counter->getIdentifier(), '__name', $counter->getName());
-        $this->redis->sAdd($this->keyPrefix . Counter::TYPE . self::KEY_SUFFIX, [$counter->getIdentifier()]);
+            $this->redis->hSet($counter->getIdentifier(), '__name', $counter->getName());
+            $this->redis->sAdd($this->keyPrefix . Counter::TYPE . self::KEY_SUFFIX, [$counter->getIdentifier()]);
+        } catch (ConnectionException $exception) {
+            if ($this->ignoreConnectionErrors === false) {
+                throw $exception;
+            }
+        }
     }
 
     /**
      * @param Gauge $gauge
      * @param GaugeUpdate $update
      * @return void
+     * @throws Exception
      */
     public function updateGauge(Gauge $gauge, GaugeUpdate $update): void
     {
@@ -194,29 +229,35 @@ class RedisStorage extends AbstractStorage
             throw new \InvalidArgumentException(sprintf('failed updating unknown gauge %s (%s)', $gauge->getName(), $identifier), 1574259278);
         }
 
-        switch ($update->getOperation()) {
-            case StorageInterface::OPERATION_INCREASE:
-                $this->redis->hIncrByFloat(
-                    $gauge->getIdentifier(),
-                    $this->encodeLabels($update->getLabels()),
-                    $update->getValue()
-                );
-            break;
-            case StorageInterface::OPERATION_SET:
-                $this->redis->hSet(
-                    $gauge->getIdentifier(),
-                    $this->encodeLabels($update->getLabels()),
-                    $update->getValue()
-                );
-            break;
+        try {
+            switch ($update->getOperation()) {
+                case StorageInterface::OPERATION_INCREASE:
+                    $this->redis->hIncrByFloat(
+                        $gauge->getIdentifier(),
+                        $this->encodeLabels($update->getLabels()),
+                        $update->getValue()
+                    );
+                break;
+                case StorageInterface::OPERATION_SET:
+                    $this->redis->hSet(
+                        $gauge->getIdentifier(),
+                        $this->encodeLabels($update->getLabels()),
+                        $update->getValue()
+                    );
+                break;
+            }
+            $this->redis->hSet($gauge->getIdentifier(), '__name', $gauge->getName());
+            $this->redis->sAdd($this->keyPrefix . Gauge::TYPE . self::KEY_SUFFIX, [$gauge->getIdentifier()]);
+        } catch (ConnectionException $exception) {
+            if ($this->ignoreConnectionErrors === false) {
+                throw $exception;
+            }
         }
-
-        $this->redis->hSet($gauge->getIdentifier(), '__name', $gauge->getName());
-        $this->redis->sAdd($this->keyPrefix . Gauge::TYPE . self::KEY_SUFFIX, [$gauge->getIdentifier()]);
     }
 
     /**
      * @return SampleCollection[]
+     * @throws Exception
      */
     private function collectCountersAndGauges(): array
     {
@@ -231,7 +272,7 @@ class RedisStorage extends AbstractStorage
 
                 $samples = [];
                 foreach ($collectorRawHash as $sampleKey => $value) {
-                    $value = (strpos($value,'.') !== false) ? (float)$value : (int)$value;
+                    $value = (strpos($value, '.') !== false) ? (float)$value : (int)$value;
                     $samples[] = new Sample(
                         $collectorName,
                         $this->decodeLabels($sampleKey),
@@ -240,7 +281,7 @@ class RedisStorage extends AbstractStorage
                 }
                 $this->sortSamples($samples);
 
-                $collector =  $this->counters[$collectorKey] ?? $this->gauges[$collectorKey] ?? null;
+                $collector = $this->counters[$collectorKey] ?? $this->gauges[$collectorKey] ?? null;
                 if ($collector) {
                     $sampleCollections[$collectorKey] = new SampleCollection(
                         $collectorName,
