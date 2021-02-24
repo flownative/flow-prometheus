@@ -42,8 +42,7 @@ class MetricsExporterComponentTest extends UnitTestCase
         $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
         $httpComponent->handle($componentContext);
 
-        self::assertTrue($componentContext->getParameter(ComponentChain::class, 'cancel'));
-        self::assertSame(400, $componentContext->getHttpResponse()->getStatusCode());
+        self::assertFalse($componentContext->getParameter(ComponentChain::class, 'cancel'));
     }
 
     /**

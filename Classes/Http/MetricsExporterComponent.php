@@ -79,19 +79,16 @@ class MetricsExporterComponent implements ComponentInterface
             return;
         }
 
-        $componentContext->setParameter(ComponentChain::class, 'cancel', true);
-
         if ($componentContext->getHttpRequest()->getUri()->getPath() !== $this->options['telemetryPath']) {
-            $componentContext->replaceHttpResponse($componentContext->getHttpResponse()->withStatus(400, 'Bad Request (Flownative Prometheus Metrics)'));
             return;
         }
 
-        if ($this->options['basicAuth']['username'] !== '' && $this->options['basicAuth']['password'] !== '') {
-            if ($this->authenticateWithBasicAuth($componentContext) === false) {
-                $response = $this->createResponseWithAuthenticateHeader($componentContext->getHttpResponse());
-                $componentContext->replaceHttpResponse($response);
-                return;
-            }
+        $componentContext->setParameter(ComponentChain::class, 'cancel', true);
+
+        if ($this->options['basicAuth']['username'] !== '' && $this->options['basicAuth']['password'] !== '' && $this->authenticateWithBasicAuth($componentContext) === false) {
+            $response = $this->createResponseWithAuthenticateHeader($componentContext->getHttpResponse());
+            $componentContext->replaceHttpResponse($response);
+            return;
         }
 
         $response = $this->createResponseWithRenderedMetrics($componentContext->getHttpResponse());
