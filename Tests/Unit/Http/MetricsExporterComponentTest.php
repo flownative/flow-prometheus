@@ -23,6 +23,14 @@ use Neos\Flow\Tests\UnitTestCase;
 class MetricsExporterComponentTest extends UnitTestCase
 {
     /**
+     * @return void
+     */
+    public function setUp(): void
+    {
+        putenv('FLOWNATIVE_PROMETHEUS_ENABLE=true');
+    }
+
+    /**
      * @test
      */
     public function componentIgnoresRequestsWithNonMatchingPath(): void
@@ -34,7 +42,8 @@ class MetricsExporterComponentTest extends UnitTestCase
         $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
         $httpComponent->handle($componentContext);
 
-        self::assertFalse($componentContext->getParameter(ComponentChain::class, 'cancel'));
+        self::assertTrue($componentContext->getParameter(ComponentChain::class, 'cancel'));
+        self::assertSame(400, $componentContext->getHttpResponse()->getStatusCode());
     }
 
     /**
