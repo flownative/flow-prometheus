@@ -86,6 +86,14 @@ class CollectorRegistry
     }
 
     /**
+     * @return bool
+     */
+    public function hasCollectors(): bool
+    {
+        return (count($this->counters) + count($this->gauges) > 0);
+    }
+
+    /**
      * @return SampleCollection[]
      */
     public function collect(): array

@@ -102,9 +102,13 @@ class MetricsExporterComponent implements ComponentInterface
     private function createResponseWithRenderedMetrics(ResponseInterface $existingResponse): ResponseInterface
     {
         $renderer = new Renderer();
-        $output = $renderer->render($this->collectorRegistry->collect());
-        if ($output === '') {
-            $output = "# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.\n";
+        if ($this->collectorRegistry->hasCollectors()) {
+            $output = $renderer->render($this->collectorRegistry->collect());
+            if ($output === '') {
+                $output = "# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.\n";
+            }
+        } else {
+            $output = "# Flownative Prometheus Metrics Exporter: There are no collectors registered at the registry.\n";
         }
 
         return $existingResponse
