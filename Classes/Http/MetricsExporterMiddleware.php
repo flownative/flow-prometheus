@@ -10,17 +10,20 @@ namespace Flownative\Prometheus\Http;
 
 use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Renderer;
-use Neos\Flow\Http\Component\ComponentChain;
-use Neos\Flow\Http\Component\ComponentContext;
-use Neos\Flow\Http\Component\ComponentInterface;
+use GuzzleHttp\Psr7\Response;
 use Neos\Flow\Http\ContentStream;
+use Neos\Flow\Log\Utility\LogEnvironment;
+use Neos\Flow\Security\Exception\AccessDeniedException;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * HTTP component which renders Prometheus metrics
+ * PSR-15 middleware which renders Prometheus metrics
  */
-class MetricsExporterComponent implements ComponentInterface
+class MetricsExporterMiddleware implements MiddlewareInterface
 {
     /**
      * @var CollectorRegistry
@@ -71,35 +74,35 @@ class MetricsExporterComponent implements ComponentInterface
     }
 
     /**
-     * @param ComponentContext $componentContext
+     * @param ServerRequestInterface $request
+     * @param RequestHandlerInterface $handler
+     * @return ResponseInterface
+     * @throws AccessDeniedException
      */
-    public function handle(ComponentContext $componentContext): void
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (getenv('FLOWNATIVE_PROMETHEUS_ENABLE') !== 'true') {
-            return;
+            return $handler->handle($request);
         }
 
-        if ($componentContext->getHttpRequest()->getUri()->getPath() !== $this->options['telemetryPath']) {
-            return;
+        if ($request->getUri()->getPath() !== $this->options['telemetryPath']) {
+            return $handler->handle($request);
         }
 
-        $componentContext->setParameter(ComponentChain::class, 'cancel', true);
-
-        if ($this->options['basicAuth']['username'] !== '' && $this->options['basicAuth']['password'] !== '' && $this->authenticateWithBasicAuth($componentContext) === false) {
-            $response = $this->createResponseWithAuthenticateHeader($componentContext->getHttpResponse());
-            $componentContext->replaceHttpResponse($response);
-            return;
+        if ($this->options['basicAuth']['username'] !== '' && $this->options['basicAuth']['password'] !== '') {
+            $authenticated =  $this->authenticateWithBasicAuth($request);
+            if (!$authenticated) {
+                return $this->createResponseWithAuthenticateHeader();
+            }
         }
 
-        $response = $this->createResponseWithRenderedMetrics($componentContext->getHttpResponse());
-        $componentContext->replaceHttpResponse($response);
+        return $this->createResponseWithRenderedMetrics();
     }
 
     /**
-     * @param ResponseInterface $existingResponse
      * @return ResponseInterface
      */
-    private function createResponseWithRenderedMetrics(ResponseInterface $existingResponse): ResponseInterface
+    private function createResponseWithRenderedMetrics(): ResponseInterface
     {
         $renderer = new Renderer();
         if ($this->collectorRegistry->hasCollectors()) {
@@ -111,39 +114,32 @@ class MetricsExporterComponent implements ComponentInterface
             $output = "# Flownative Prometheus Metrics Exporter: There are no collectors registered at the registry.\n";
         }
 
-        return $existingResponse
-            ->withBody(ContentStream::fromContents($output))
-            ->withHeader('Content-Type', 'text/plain; version=' . $renderer->getFormatVersion() . '; charset=UTF-8');
+        return new Response(
+            200,
+            ['Content-Type' => 'text/plain; version=' . $renderer->getFormatVersion() . '; charset=UTF-8'],
+            ContentStream::fromContents($output)
+        );
     }
 
     /**
-     * @param ResponseInterface $existingResponse
      * @return ResponseInterface
      */
-    private function createResponseWithAuthenticateHeader(ResponseInterface $existingResponse): ResponseInterface
+    private function createResponseWithAuthenticateHeader(): ResponseInterface
     {
-        return $existingResponse
-            ->withHeader('WWW-Authenticate', 'Basic realm="' . $this->options['basicAuth']['realm'] . '", charset="UTF-8"');
+        return new Response(200, ['WWW-Authenticate' => 'Basic realm="' . $this->options['basicAuth']['realm'] . '", charset="UTF-8"']);
     }
 
     /**
-     * @param ComponentContext $componentContext
+     * @param ServerRequestInterface $request
      * @return bool
+     * @throws AccessDeniedException
      */
-    private function authenticateWithBasicAuth(ComponentContext $componentContext): bool
+    private function authenticateWithBasicAuth(ServerRequestInterface $request): bool
     {
-        $authorizationHeaders = $componentContext->getHttpRequest()->getHeader('Authorization');
-
-        // For backwards-compatibility with Flow < 6.x:
-        if ($authorizationHeaders === null) {
-            $authorizationHeaders = [];
-        } elseif (is_string($authorizationHeaders)) {
-            $authorizationHeaders = [$authorizationHeaders];
-        }
-
+        $authorizationHeaders = $request->getHeader('Authorization');
         if ($authorizationHeaders === []) {
             if ($this->logger) {
-                $this->logger->info('No authorization header found, asking for authentication for Prometheus telemetry endpoint');
+                $this->logger->info('No authorization header found, asking for authentication for Prometheus telemetry endpoint', LogEnvironment::fromMethodName(__METHOD__));
             }
             return false;
         }
@@ -157,7 +153,7 @@ class MetricsExporterComponent implements ComponentInterface
 
         if (!isset($authorizationHeader)) {
             if ($this->logger) {
-                $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint, no "Basic" authorization header found');
+                $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint, no "Basic" authorization header found', LogEnvironment::fromMethodName(__METHOD__));
             }
             return false;
         }
@@ -169,13 +165,11 @@ class MetricsExporterComponent implements ComponentInterface
             $givenUsername !== $this->options['basicAuth']['username'] ||
             $givenPassword !== $this->options['basicAuth']['password']
         ) {
-            $componentContext->replaceHttpResponse($componentContext->getHttpResponse()->withStatus(403));
             if ($this->logger) {
                 $this->logger->warning('Failed authenticating for Prometheus telemetry endpoint: wrong username or password');
             }
-            return false;
+            throw new AccessDeniedException('Failed authenticating for Prometheus telemetry endpoint: wrong username or password', 1614338257);
         }
-
         return true;
     }
 }
