@@ -25,5 +25,8 @@
         "psr-4": {
             "Flownative\\Prometheus\\": "Classes"
         }
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }
