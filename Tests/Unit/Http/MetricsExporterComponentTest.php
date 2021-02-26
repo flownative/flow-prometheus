@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Flownative\Prometheus\Tests\Unit;
+namespace Flownative\Prometheus\Tests\Unit\Http;
 
 /*
  * This file is part of the Flownative.Prometheus package.
@@ -11,16 +11,14 @@ namespace Flownative\Prometheus\Tests\Unit;
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
-use Flownative\Prometheus\Http\MetricsExporterComponent;
+use Flownative\Prometheus\Http\MetricsExporterMiddleware;
 use Flownative\Prometheus\Storage\InMemoryStorage;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Uri;
-use Neos\Flow\Http\Component\ComponentChain;
-use Neos\Flow\Http\Component\ComponentContext;
 use Neos\Flow\Tests\UnitTestCase;
 
-class MetricsExporterComponentTest extends UnitTestCase
+class MetricsExporterMiddlewareTest extends UnitTestCase
 {
     /**
      * @return void
@@ -32,27 +30,30 @@ class MetricsExporterComponentTest extends UnitTestCase
 
     /**
      * @test
+     * @throws
      */
-    public function componentIgnoresRequestsWithNonMatchingPath(): void
+    public function middlewareIgnoresRequestsWithNonMatchingPath(): void
     {
-        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/foo')), new Response());
-        $componentContext->setParameter(ComponentChain::class, 'cancel', false);
+        $middleware = new MetricsExporterMiddleware();
+        $middleware->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
 
-        $httpComponent = new MetricsExporterComponent();
-        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
-        $httpComponent->handle($componentContext);
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/foo'));
 
-        self::assertFalse($componentContext->getParameter(ComponentChain::class, 'cancel'));
+        $response = $middleware->process($request, $handler);
+
+        self::assertTrue($handler->isHandleCalled());
+        self::assertTrue($response->hasHeader('X-Dummy-Request-Handler'));
     }
 
     /**
      * @test
      * @throws InvalidCollectorTypeException
      */
-    public function componentRendersMetrics(): void
+    public function middlewareRendersMetrics(): void
     {
-        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
-        $componentContext->setParameter(ComponentChain::class, 'cancel', false);
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/metrics'));
 
         $storage = new InMemoryStorage();
         $collectorRegistry = new CollectorRegistry($storage);
@@ -60,33 +61,58 @@ class MetricsExporterComponentTest extends UnitTestCase
         $collectorRegistry->register('test_counter', Counter::TYPE, 'This is a simple counter');
         $collectorRegistry->getCounter('test_counter')->inc(5);
 
-        $httpComponent = new MetricsExporterComponent();
-        $httpComponent->injectCollectorRegistry($collectorRegistry);
-        $httpComponent->handle($componentContext);
+        $middleware = new MetricsExporterMiddleware();
+        $middleware->injectCollectorRegistry($collectorRegistry);
+
+        $response = $middleware->process($request, $handler);
 
         $expectedOutput = <<<'EOD'
 # HELP test_counter This is a simple counter
 # TYPE test_counter counter
 test_counter 5
 EOD;
-        self::assertTrue($componentContext->getParameter(ComponentChain::class, 'cancel'));
-        self::assertSame($expectedOutput, $componentContext->getHttpResponse()->getBody()->getContents());
-        self::assertSame('text/plain; version=0.0.4; charset=UTF-8', $componentContext->getHttpResponse()->getHeader('Content-Type')[0]);
+        self::assertSame($expectedOutput, $response->getBody()->getContents());
+        self::assertSame('text/plain; version=0.0.4; charset=UTF-8', $response->getHeader('Content-Type')[0]);
     }
 
     /**
      * @test
      */
-    public function componentRendersCommentIfNoMetricsExist(): void
+    public function middlewareRendersCommentIfNoCollectorsAreRegistered(): void
     {
-        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
+        $middleware = new MetricsExporterMiddleware();
+        $middleware->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
 
-        $httpComponent = new MetricsExporterComponent();
-        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
-        $httpComponent->handle($componentContext);
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/metrics'));
+
+        $response = $middleware->process($request, $handler);
+
+        $expectedOutput = "# Flownative Prometheus Metrics Exporter: There are no collectors registered at the registry.\n";
+        self::assertSame($expectedOutput, $response->getBody()->getContents());
+    }
+
+    /**
+     * @test
+     * @throws
+     */
+    public function middlewareRendersCommentIfNoMetricsExist(): void
+    {
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/metrics'));
+
+        $storage = new InMemoryStorage();
+        $collectorRegistry = new CollectorRegistry($storage);
+
+        $collectorRegistry->register('test_counter', Counter::TYPE, 'This is a simple counter');
+
+        $middleware = new MetricsExporterMiddleware();
+        $middleware->injectCollectorRegistry($collectorRegistry);
+
+        $response = $middleware->process($request, $handler);
 
         $expectedOutput = "# Flownative Prometheus Metrics Exporter: There are currently no metrics with data to export.\n";
-        self::assertSame($expectedOutput, $componentContext->getHttpResponse()->getBody()->getContents());
+        self::assertSame($expectedOutput, $response->getBody()->getContents());
     }
 
     /**
@@ -94,36 +120,40 @@ EOD;
      */
     public function telemetryPathIsConfigurable(): void
     {
-        $httpComponent = new MetricsExporterComponent(['telemetryPath' => '/different-metrics']);
-        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+        $middleware = new MetricsExporterMiddleware(['telemetryPath' => '/metrix']);
+        $middleware->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
 
-        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
-        $httpComponent->handle($componentContext);
-        self::assertEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/metrix'));
+        $response = $middleware->process($request, $handler);
+        self::assertFalse($handler->isHandleCalled());
+        self::assertNotEmpty($response->getBody()->getContents());
 
-        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/different-metrics')), new Response());
-        $httpComponent->handle($componentContext);
-        self::assertNotEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/metrics'));
+        $middleware->process($request, $handler);
+        self::assertTrue($handler->isHandleCalled());
     }
 
     /**
      * @test
      */
-    public function componentRequiresHttpBasicAuthIfConfigured(): void
+    public function middlewareRequiresHttpBasicAuthIfConfigured(): void
     {
-        $httpComponent = new MetricsExporterComponent([
+        $middleware = new MetricsExporterMiddleware([
             'basicAuth' => [
                 'username' => 'prometheus',
                 'password' => 'password',
                 'realm' => '👑'
             ]
         ]);
-        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+        $middleware->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
 
-        $componentContext = new ComponentContext(new ServerRequest('GET', new Uri('http://localhost/metrics')), new Response());
-        $httpComponent->handle($componentContext);
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest('GET', new Uri('http://localhost/metrics'));
+        $response = $middleware->process($request, $handler);
 
-        $authenticateHeaders = $componentContext->getHttpResponse()->getHeader('WWW-Authenticate');
+        $authenticateHeaders = $response->getHeader('WWW-Authenticate');
         self::assertCount(1, $authenticateHeaders);
         self::assertSame('Basic realm="👑", charset="UTF-8"', $authenticateHeaders[0]);
     }
@@ -131,61 +161,58 @@ EOD;
     /**
      * @test
      */
-    public function componentAcceptsCorrectHttpBasicAuthIfConfigured(): void
+    public function middlewareAcceptsCorrectHttpBasicAuthIfConfigured(): void
     {
-        $httpComponent = new MetricsExporterComponent([
+        $middleware = new MetricsExporterMiddleware([
             'basicAuth' => [
                 'username' => 'prometheus',
                 'password' => 'password',
                 'realm' => '👑'
             ]
         ]);
-        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+        $middleware->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
 
-        $componentContext = new ComponentContext(
-            new ServerRequest(
-                'GET',
-                new Uri('http://localhost/metrics'),
-                [
-                    'Authorization' => 'Basic ' . base64_encode('prometheus:password')
-                ]
-            ),
-            new Response()
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest(
+            'GET',
+            new Uri('http://localhost/metrics'),
+            [
+                'Authorization' => 'Basic ' . base64_encode('prometheus:password')
+            ]
         );
-        $httpComponent->handle($componentContext);
+        $response = $middleware->process($request, $handler);
+        $authenticateHeaders = $response->getHeader('WWW-Authenticate');
 
-        $authenticateHeaders = $componentContext->getHttpResponse()->getHeader('WWW-Authenticate');
         self::assertCount(0, $authenticateHeaders);
-        self::assertNotEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+        self::assertNotEmpty($response->getBody()->getContents());
+        self::assertFalse($handler->isHandleCalled());
     }
 
     /**
      * @test
+     * @throws
      */
-    public function componentDeniesIncorrectHttpBasicAuthIfConfigured(): void
+    public function middlewareDeniesIncorrectHttpBasicAuthIfConfigured(): void
     {
-        $httpComponent = new MetricsExporterComponent([
+        $middleware = new MetricsExporterMiddleware([
             'basicAuth' => [
                 'username' => 'prometheus',
                 'password' => 'password',
                 'realm' => '👑'
             ]
         ]);
-        $httpComponent->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
+        $middleware->injectCollectorRegistry(new CollectorRegistry(new InMemoryStorage()));
 
-        $componentContext = new ComponentContext(
-            new ServerRequest(
-                'GET',
-                new Uri('http://localhost/metrics'),
-                [
-                    'Authorization' => 'Basic ' . base64_encode('prometheus:wrong-password')
-                ]
-            ),
-            new Response()
+        $handler = new DummyRequestHandler();
+        $request = new ServerRequest(
+            'GET',
+            new Uri('http://localhost/metrics'),
+            [
+                'Authorization' => 'Basic ' . base64_encode('prometheus:wrong-password')
+            ]
         );
-        $httpComponent->handle($componentContext);
 
-        self::assertSame(403, $componentContext->getHttpResponse()->getStatusCode());
-        self::assertEmpty($componentContext->getHttpResponse()->getBody()->getContents());
+        $this->expectExceptionCode(1614338257);
+        $middleware->process($request, $handler);
     }
 }

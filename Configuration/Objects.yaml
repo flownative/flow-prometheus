@@ -1,8 +1,18 @@
-Flownative\Prometheus\Http\MetricsExporterComponent:
+Flownative\Prometheus\Http\MetricsExporterMiddleware:
+  arguments:
+    1:
+      value:
+        ## Path at which metrics are published for scraping
+        telemetryPath: '/metrics'
+
+        basicAuth:
+          username: ''
+          password: ''
+          realm: 'Flownative Prometheus Plugin'
+
   properties:
     collectorRegistry:
       object: Flownative\Prometheus\DefaultCollectorRegistry
-
 
 Flownative\Prometheus\DefaultCollectorRegistry:
   arguments:
