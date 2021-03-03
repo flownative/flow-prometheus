@@ -14,6 +14,12 @@ use Flownative\Prometheus\Collector\Gauge;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
 
+/*
+ * Warning:
+ * 
+ * InMemoryStorage for testing purposes.
+ * You will want to use the RedisStorage instead, so you don't loose all metrics values between requests.
+ */
 class InMemoryStorage extends AbstractStorage
 {
     /**
