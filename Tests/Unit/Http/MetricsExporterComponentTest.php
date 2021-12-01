@@ -13,7 +13,6 @@ use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Http\MetricsExporterMiddleware;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Uri;
 use Neos\Flow\Security\Exception\AccessDeniedException;
@@ -26,6 +25,7 @@ class MetricsExporterMiddlewareTest extends UnitTestCase
      */
     public function setUp(): void
     {
+        parent::setUp();
         putenv('FLOWNATIVE_PROMETHEUS_ENABLE=true');
     }
 
