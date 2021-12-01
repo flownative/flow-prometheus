@@ -21,9 +21,9 @@ class RedisStorageTest extends AbstractStorageTest
     {
         parent::setUp();
         $this->storage = new RedisStorage([
-            'hostname' => getenv('REDIS_HOST') ?? '127.0.0.1',
-            'port' => getenv('REDIS_PORT') ?? '6379',
-            'password' => getenv('REDIS_PASSWORD') ?? '',
+            'hostname' => getenv('REDIS_HOST') ?: '127.0.0.1',
+            'port' => getenv('REDIS_PORT') ?: '6379',
+            'password' => getenv('REDIS_PASSWORD') ?: '',
         ]);
 
         $this->storage->flush();
