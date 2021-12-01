@@ -23,7 +23,7 @@ class Counter extends AbstractCollector
     }
 
     /**
-     * @param int|float|double $amount
+     * @param int|float $amount
      * @param array $labels
      */
     public function inc($amount = 1, array $labels = []): void

@@ -49,7 +49,7 @@ class RedisStorage extends AbstractStorage
     protected $hostname = '127.0.0.1';
 
     /**
-     * @var integer
+     * @var int
      */
     protected $port = 6379;
 
@@ -64,7 +64,7 @@ class RedisStorage extends AbstractStorage
     protected $service = 'mymaster';
 
     /**
-     * @var integer
+     * @var int
      */
     protected $database = 0;
 
@@ -79,7 +79,7 @@ class RedisStorage extends AbstractStorage
     protected $keyPrefix = 'flownative_prometheus';
 
     /**
-     * @var boolean
+     * @var bool
      */
     protected $ignoreConnectionErrors = false;
 

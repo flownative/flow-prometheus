@@ -20,7 +20,7 @@ class Sample
     private $labels;
 
     /**
-     * @var int|double
+     * @var int|float
      */
     private $value;
 

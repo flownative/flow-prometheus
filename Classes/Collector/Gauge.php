@@ -25,7 +25,7 @@ class Gauge extends AbstractCollector
     /**
      * Increase the gauge's value
      *
-     * @param int|float|double $amount
+     * @param int|float $amount
      * @param array $labels
      */
     public function inc($amount = 1, array $labels = []): void
@@ -36,7 +36,7 @@ class Gauge extends AbstractCollector
     /**
      * Decrease the gauge's value
      *
-     * @param int|float|double $amount
+     * @param int|float $amount
      * @param array $labels
      */
     public function dec($amount = 1, array $labels = []): void
@@ -47,7 +47,7 @@ class Gauge extends AbstractCollector
     /**
      * Set the gauge's value
      *
-     * @param int|float|double $value
+     * @param int|float $value
      * @param array $labels
      */
     public function set($value, array $labels = []): void

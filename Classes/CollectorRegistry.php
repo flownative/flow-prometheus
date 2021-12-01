@@ -52,7 +52,7 @@ class CollectorRegistry
     /**
      * @param string $name
      * @param string $type
-     * @param string|null $help
+     * @param string $help
      * @param array $labels
      * @throws InvalidCollectorTypeException
      */

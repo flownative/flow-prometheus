@@ -20,7 +20,7 @@ class CounterUpdate
     /**
      * A positive number
      *
-     * @var int|double|float
+     * @var int|float
      */
     private $value;
 
