@@ -40,7 +40,7 @@ class GaugeUpdate
             throw new \InvalidArgumentException(sprintf('gauge update: invalid operation type "%s"', $operation), 1574257299);
         }
         if (!is_numeric($value)) {
-            throw new \InvalidArgumentException(sprintf('invalid value for gauge update, must be a number'), 1574257303);
+            throw new \InvalidArgumentException('invalid value for gauge update, must be a number', 1574257303);
         }
         $this->operation = $operation;
         $this->value = $value;

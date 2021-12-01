@@ -321,13 +321,4 @@ class RedisStorage extends AbstractStorage
         }
         return new Predis\Client($connectionParameters, $options);
     }
-
-    /**
-     * @param array $data
-     * @return string
-     */
-    private function toMetricKey(array $data): string
-    {
-        return implode(':', [$this->keyPrefix, $data['type'], $data['name']]);
-    }
 }

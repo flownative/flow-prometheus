@@ -97,7 +97,7 @@ class CollectorRegistryTest extends UnitTestCase
         $registry->register('flownative_prometheus_test_calls_total', Counter::TYPE, 'a test call counter', ['tests', 'counter']);
 
         $counterA = $registry->getCounter('flownative_prometheus_test_calls_total');
-        $counterA->inc(1);
+        $counterA->inc();
 
         $sampleCollections = $registry->collect();
 

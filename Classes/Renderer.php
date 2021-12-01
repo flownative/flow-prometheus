@@ -41,7 +41,7 @@ class Renderer
             }
             $lines[] = '# TYPE ' . $sampleCollection->getName() . " {$sampleCollection->getType()}";
             foreach ($sampleCollection->getSamples() as $sample) {
-                $lines[] = $this->renderSample($sampleCollection, $sample);
+                $lines[] = $this->renderSample($sample);
             }
             $lines[] = '';
         }
@@ -49,11 +49,10 @@ class Renderer
     }
 
     /**
-     * @param SampleCollection $sampleCollection
      * @param Sample $sample
      * @return string
      */
-    private function renderSample(SampleCollection $sampleCollection, Sample $sample): string
+    private function renderSample(Sample $sample): string
     {
         $labelStatements = [];
         foreach ($sample->getLabels() as $labelName => $labelValue) {
