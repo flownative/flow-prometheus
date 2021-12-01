@@ -19,12 +19,12 @@ class InMemoryStorage extends AbstractStorage
     /**
      * @var array
      */
-    private $countersData = [];
+    private array $countersData = [];
 
     /**
      * @var array
      */
-    private $gaugesData = [];
+    private array $gaugesData = [];
 
     /**
      * @return SampleCollection[]

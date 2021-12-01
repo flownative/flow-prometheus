@@ -18,7 +18,7 @@ class DummyRequestHandler implements RequestHandlerInterface
     /**
      * @var bool
      */
-    protected $handleCalled = false;
+    protected bool $handleCalled = false;
 
     /**
      * @param ServerRequestInterface $request

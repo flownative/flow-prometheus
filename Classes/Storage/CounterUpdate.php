@@ -15,7 +15,7 @@ class CounterUpdate
      *
      * @var string
      */
-    private $operation;
+    private string $operation;
 
     /**
      * A positive number
@@ -27,7 +27,7 @@ class CounterUpdate
     /**
      * @var array
      */
-    private $labels;
+    private array $labels;
 
     /**
      * @param string $operation

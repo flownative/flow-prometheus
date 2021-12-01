@@ -28,17 +28,17 @@ class MetricsExporterMiddleware implements MiddlewareInterface
     /**
      * @var CollectorRegistry
      */
-    protected $collectorRegistry;
+    protected CollectorRegistry $collectorRegistry;
 
     /**
-     * @var LoggerInterface
+     * @var LoggerInterface|null
      */
-    protected $logger;
+    protected ?LoggerInterface $logger = null;
 
     /**
      * @var array
      */
-    protected $options = [
+    protected array $options = [
         'telemetryPath' => '/metrics',
         'basicAuth' => []
     ];

@@ -31,57 +31,57 @@ class RedisStorage extends AbstractStorage
     /**
      * @var Counter[]
      */
-    protected $counters;
+    protected array $counters = [];
 
     /**
      * @var Gauge[]
      */
-    protected $gauges;
+    protected array $gauges = [];
 
     /**
      * @var Predis\Client
      */
-    protected $redis;
+    protected Predis\Client $redis;
 
     /**
      * @var string
      */
-    protected $hostname = '127.0.0.1';
+    protected string $hostname = '127.0.0.1';
 
     /**
      * @var int
      */
-    protected $port = 6379;
+    protected int $port = 6379;
 
     /**
      * @var array
      */
-    protected $sentinels = [];
+    protected array $sentinels = [];
 
     /**
      * @var string
      */
-    protected $service = 'mymaster';
+    protected string $service = 'mymaster';
 
     /**
      * @var int
      */
-    protected $database = 0;
+    protected int $database = 0;
 
     /**
      * @var string
      */
-    protected $password = '';
+    protected string $password = '';
 
     /**
      * @var string
      */
-    protected $keyPrefix = 'flownative_prometheus';
+    protected string $keyPrefix = 'flownative_prometheus';
 
     /**
      * @var bool
      */
-    protected $ignoreConnectionErrors = false;
+    protected bool $ignoreConnectionErrors = false;
 
     /**
      * @param array $options

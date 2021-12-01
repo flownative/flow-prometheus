@@ -18,17 +18,17 @@ class CollectorRegistry
     /**
      * @var StorageInterface
      */
-    protected $storage;
+    protected StorageInterface $storage;
 
     /**
      * @var array
      */
-    protected $counters = [];
+    protected array $counters = [];
 
     /**
      * @var array
      */
-    protected $gauges = [];
+    protected array $gauges = [];
 
     /**
      * @param StorageInterface $storage

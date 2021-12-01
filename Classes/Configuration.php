@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Flownative\Prometheus;
 
 /*
@@ -16,17 +17,17 @@ class Configuration
     /**
      * @var string
      */
-    protected $type;
+    protected string $type;
 
     /**
      * @var string
      */
-    protected $help = '';
+    protected string $help = '';
 
     /**
      * @var array
      */
-    protected $labels = [];
+    protected array $labels = [];
 
     /**
      * @param string $type

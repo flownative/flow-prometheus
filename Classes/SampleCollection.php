@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Flownative\Prometheus;
 
 /*
@@ -12,27 +13,27 @@ class SampleCollection
     /**
      * @var string
      */
-    private $name;
+    private string $name;
 
     /**
      * @var string
      */
-    private $type;
+    private string $type;
 
     /**
      * @var string
      */
-    private $help;
+    private string $help;
 
     /**
      * @var array
      */
-    private $labels;
+    private array $labels;
 
     /**
      * @var Sample[]
      */
-    private $samples = [];
+    private array $samples;
 
     /**
      * @param string $name

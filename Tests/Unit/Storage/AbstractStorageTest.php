@@ -22,7 +22,7 @@ abstract class AbstractStorageTest extends UnitTestCase
     /**
      * @var StorageInterface
      */
-    protected $storage;
+    protected StorageInterface $storage;
 
     /**
      * @test
