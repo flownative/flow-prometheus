@@ -57,7 +57,7 @@ class Renderer
     {
         $labelStatements = [];
         foreach ($sample->getLabels() as $labelName => $labelValue) {
-            $labelStatements[] = $labelName . '="' . $this->escapeLabelValue($labelValue) . '"';
+            $labelStatements[] = $labelName . '="' . $this->escapeLabelValue((string)$labelValue) . '"';
         }
         return $sample->getName() . ($labelStatements ? '{' . implode(',', $labelStatements) . '}' : '') . ' ' . $sample->getValue();
     }
