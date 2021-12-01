@@ -8,7 +8,6 @@ namespace Flownative\Prometheus\Tests\Unit;
  * (c) Flownative GmbH - www.flownative.com
  */
 
-use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\DefaultCollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Storage\InMemoryStorage;
@@ -35,7 +34,6 @@ class DefaultCollectorRegistryTest extends UnitTestCase
         $registry->initializeObject();
 
         $counter = $registry->getCounter('flownative_test_hits_total');
-        self::assertInstanceOf(Counter::class, $counter);
         self::assertSame('flownative_test_hits_total', $counter->getName());
     }
 }
