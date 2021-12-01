@@ -56,6 +56,7 @@ class CollectorRegistryTest extends UnitTestCase
     /**
      * @test
      * @throws InvalidCollectorTypeException
+     * @throws \Exception
      */
     public function registerAlsoRegistersCollectorAtStorage(): void
     {

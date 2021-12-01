@@ -45,6 +45,7 @@ class GaugeTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function incIncreasesGaugeByOne(): void
     {
@@ -78,6 +79,7 @@ class GaugeTest extends UnitTestCase
      * @param $firstValue
      * @param $secondValue
      * @param $expectedResult
+     * @throws \Exception
      */
     public function incIncreasesGaugeByGivenValue($firstValue, $secondValue, $expectedResult): void
     {
@@ -95,6 +97,7 @@ class GaugeTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function decDecreasesGaugeByOne(): void
     {
@@ -112,6 +115,7 @@ class GaugeTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function setSetsTheGaugesValue(): void
     {
@@ -129,6 +133,7 @@ class GaugeTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function setToCurrentTimeSetsValueToCurrentUnixTimestamp(): void
     {
@@ -150,6 +155,7 @@ class GaugeTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function incSupportsLabels(): void
     {

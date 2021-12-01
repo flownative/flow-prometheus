@@ -116,6 +116,7 @@ abstract class AbstractStorageTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function updateCounterResetsCounterIfSetOperationIsSpecified(): void
     {
