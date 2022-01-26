@@ -5,13 +5,3 @@ Neos:
         'Flownative.Prometheus:metricsExporter':
           'position': 'before routing'
           middleware: 'Flownative\Prometheus\Http\MetricsExporterMiddleware'
-
-Flownative:
-  OpenIdConnect:
-    Client:
-      middleware:
-        authenticationProviderName: 'Flownative.OpenIdConnect.Client:OidcProvider'
-        cookie:
-          name: 'flownative_oidc_jwt'
-          secure: true
-          sameSite: 'strict'
