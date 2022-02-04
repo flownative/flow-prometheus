@@ -23,7 +23,7 @@ abstract class AbstractStorage implements StorageInterface
         ksort($labels);
         $encodedLabels = json_encode($labels);
         if ($encodedLabels === false) {
-            throw new \Exception(json_last_error());
+            throw new \RuntimeException(json_last_error_msg());
         }
         return base64_encode($encodedLabels);
     }
@@ -36,7 +36,7 @@ abstract class AbstractStorage implements StorageInterface
     {
         $decodedLabels = json_decode(base64_decode($encodedLabels), true);
         if ($decodedLabels === NULL) {
-            throw new \Exception(json_last_error());
+            throw new \RuntimeException(json_last_error_msg());
         }
         return $decodedLabels;
     }
