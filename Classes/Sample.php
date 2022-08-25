@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Flownative\Prometheus;
 
 /*
@@ -12,15 +13,15 @@ class Sample
     /**
      * @var string
      */
-    private $name;
+    private string $name;
 
     /**
      * @var array
      */
-    private $labels;
+    private array $labels;
 
     /**
-     * @var int|double
+     * @var int|float
      */
     private $value;
 

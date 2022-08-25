@@ -45,6 +45,7 @@ class CounterTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function incIncreasesCounterByOne(): void
     {
@@ -77,6 +78,7 @@ class CounterTest extends UnitTestCase
      * @param $firstValue
      * @param $secondValue
      * @param $expectedResult
+     * @throws \Exception
      */
     public function incIncreasesCounterByGivenValue($firstValue, $secondValue, $expectedResult): void
     {
@@ -94,6 +96,7 @@ class CounterTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function incSupportsLabels(): void
     {

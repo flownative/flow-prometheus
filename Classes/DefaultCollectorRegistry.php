@@ -20,7 +20,7 @@ final class DefaultCollectorRegistry extends CollectorRegistry
      * @Flow\InjectConfiguration(path="metrics")
      * @var array
      */
-    protected $settings;
+    protected array $settings = [];
 
     /**
      * @throws Exception\InvalidCollectorTypeException

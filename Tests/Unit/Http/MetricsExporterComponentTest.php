@@ -13,9 +13,9 @@ use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Http\MetricsExporterMiddleware;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Uri;
+use Neos\Flow\Security\Exception\AccessDeniedException;
 use Neos\Flow\Tests\UnitTestCase;
 
 class MetricsExporterMiddlewareTest extends UnitTestCase
@@ -25,6 +25,7 @@ class MetricsExporterMiddlewareTest extends UnitTestCase
      */
     public function setUp(): void
     {
+        parent::setUp();
         putenv('FLOWNATIVE_PROMETHEUS_ENABLE=true');
     }
 
@@ -49,6 +50,7 @@ class MetricsExporterMiddlewareTest extends UnitTestCase
     /**
      * @test
      * @throws InvalidCollectorTypeException
+     * @throws AccessDeniedException
      */
     public function middlewareRendersMetrics(): void
     {
@@ -77,6 +79,7 @@ EOD;
 
     /**
      * @test
+     * @throws AccessDeniedException
      */
     public function middlewareRendersCommentIfNoCollectorsAreRegistered(): void
     {
@@ -117,6 +120,7 @@ EOD;
 
     /**
      * @test
+     * @throws AccessDeniedException
      */
     public function telemetryPathIsConfigurable(): void
     {
@@ -137,6 +141,7 @@ EOD;
 
     /**
      * @test
+     * @throws AccessDeniedException
      */
     public function middlewareRequiresHttpBasicAuthIfConfigured(): void
     {
@@ -160,6 +165,7 @@ EOD;
 
     /**
      * @test
+     * @throws AccessDeniedException
      */
     public function middlewareAcceptsCorrectHttpBasicAuthIfConfigured(): void
     {

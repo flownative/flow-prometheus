@@ -15,19 +15,19 @@ class CounterUpdate
      *
      * @var string
      */
-    private $operation;
+    private string $operation;
 
     /**
      * A positive number
      *
-     * @var int|double|float
+     * @var int|float
      */
     private $value;
 
     /**
      * @var array
      */
-    private $labels;
+    private array $labels;
 
     /**
      * @param string $operation
@@ -40,7 +40,7 @@ class CounterUpdate
             throw new \InvalidArgumentException(sprintf('counter update: invalid operation type "%s"', $operation), 1573814341);
         }
         if (!is_numeric($value) || $value < 0) {
-            throw new \InvalidArgumentException(sprintf('invalid value for counter update, must be a positive number'), 1573814397);
+            throw new \InvalidArgumentException('invalid value for counter update, must be a positive number', 1573814397);
         }
         $this->operation = $operation;
         $this->value = $value;

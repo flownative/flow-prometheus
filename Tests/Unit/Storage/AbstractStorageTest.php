@@ -22,7 +22,7 @@ abstract class AbstractStorageTest extends UnitTestCase
     /**
      * @var StorageInterface
      */
-    protected $storage;
+    protected StorageInterface $storage;
 
     /**
      * @test
@@ -116,6 +116,7 @@ abstract class AbstractStorageTest extends UnitTestCase
 
     /**
      * @test
+     * @throws \Exception
      */
     public function updateCounterResetsCounterIfSetOperationIsSpecified(): void
     {

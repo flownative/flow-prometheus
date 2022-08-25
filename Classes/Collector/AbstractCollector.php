@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Flownative\Prometheus\Collector;
 
 /*
@@ -14,22 +15,22 @@ abstract class AbstractCollector
     /**
      * @var StorageInterface
      */
-    protected $storage;
+    protected StorageInterface $storage;
 
     /**
      * @var string
      */
-    protected $name;
+    protected string $name;
 
     /**
      * @var string
      */
-    protected $help = '';
+    protected string $help = '';
 
     /**
      * @var array
      */
-    protected $labels = [];
+    protected array $labels = [];
 
     /**
      * @param StorageInterface $storage

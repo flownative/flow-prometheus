@@ -18,17 +18,17 @@ class CollectorRegistry
     /**
      * @var StorageInterface
      */
-    protected $storage;
+    protected StorageInterface $storage;
 
     /**
      * @var array
      */
-    protected $counters = [];
+    protected array $counters = [];
 
     /**
      * @var array
      */
-    protected $gauges = [];
+    protected array $gauges = [];
 
     /**
      * @param StorageInterface $storage
@@ -52,7 +52,7 @@ class CollectorRegistry
     /**
      * @param string $name
      * @param string $type
-     * @param string|null $help
+     * @param string $help
      * @param array $labels
      * @throws InvalidCollectorTypeException
      */

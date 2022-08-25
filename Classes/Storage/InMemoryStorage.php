@@ -25,15 +25,16 @@ class InMemoryStorage extends AbstractStorage
     /**
      * @var array
      */
-    private $countersData = [];
+    private array $countersData = [];
 
     /**
      * @var array
      */
-    private $gaugesData = [];
+    private array $gaugesData = [];
 
     /**
      * @return SampleCollection[]
+     * @throws \Exception
      */
     public function collect(): array
     {
@@ -79,6 +80,7 @@ class InMemoryStorage extends AbstractStorage
      * @param Counter $counter
      * @param CounterUpdate $update
      * @return void
+     * @throws \Exception
      */
     public function updateCounter(Counter $counter, CounterUpdate $update): void
     {
@@ -102,6 +104,7 @@ class InMemoryStorage extends AbstractStorage
      * @param Gauge $gauge
      * @param GaugeUpdate $update
      * @return void
+     * @throws \Exception
      */
     public function updateGauge(Gauge $gauge, GaugeUpdate $update): void
     {
@@ -130,6 +133,7 @@ class InMemoryStorage extends AbstractStorage
     /**
      * @param array $collectorsData
      * @return SampleCollection[]
+     * @throws \Exception
      */
     private function prepareCollections(array $collectorsData): array
     {
