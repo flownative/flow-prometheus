@@ -213,6 +213,20 @@ A gauge:
         );
 ```
 
+Setting for each metric:
+
+```yaml
+Flownative:
+  Prometheus:
+    metrics:
+      acme_myproject_controller_hits_total:
+        type: counter
+        help: 'metric description'
+      acme_myproject_successful_login_total:
+        type: counter
+        help: 'metric description'
+```
+
 Manual usage of the Collector Registry, using the `InMemoryStorage`:
 
 ````php
