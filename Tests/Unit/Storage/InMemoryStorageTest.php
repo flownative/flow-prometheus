@@ -10,7 +10,7 @@ namespace Flownative\Prometheus\Tests\Unit;
 
 use Flownative\Prometheus\Storage\InMemoryStorage;
 
-class InMemoryStorageTest extends AbstractStorageTest
+class InMemoryStorageTest extends AbstractStorageTestBase
 {
 
     /**
