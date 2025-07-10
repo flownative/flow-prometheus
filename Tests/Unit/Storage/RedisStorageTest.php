@@ -10,7 +10,7 @@ namespace Flownative\Prometheus\Tests\Unit;
 
 use Flownative\Prometheus\Storage\RedisStorage;
 
-class RedisStorageTest extends AbstractStorageTest
+class RedisStorageTest extends AbstractStorageTestBase
 {
 
     /**

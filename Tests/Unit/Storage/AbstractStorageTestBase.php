@@ -17,11 +17,8 @@ use Flownative\Prometheus\Storage\InMemoryStorage;
 use Flownative\Prometheus\Storage\StorageInterface;
 use Neos\Flow\Tests\UnitTestCase;
 
-abstract class AbstractStorageTest extends UnitTestCase
+abstract class AbstractStorageTestBase extends UnitTestCase
 {
-    /**
-     * @var StorageInterface
-     */
     protected StorageInterface $storage;
 
     /**
