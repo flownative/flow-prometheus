@@ -70,8 +70,11 @@ Flownative\Prometheus\Storage\RedisStorage:
       value:
         hostname: '%env:MY_REDIS_HOST%'
         port: '%env:MY_REDIS_PORT%'
+        username: '%env:MY_REDIS_USERNAME%'
         password: '%env:MY_REDIS_PASSWORD%'
         database: 20
+        keyPrefix: '%env:MY_REDIS_PREFIX%'
+        hashKeyPrefix: true
 ```
 
 In this example, environment variables are used for passing access

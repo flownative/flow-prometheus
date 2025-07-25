@@ -10,9 +10,9 @@ namespace Flownative\Prometheus\Tests\Unit;
 
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use Neos\Flow\Tests\UnitTestCase;
+use PHPUnit\Framework\TestCase;
 
-class CounterTest extends UnitTestCase
+class CounterTest extends TestCase
 {
     /**
      * @test

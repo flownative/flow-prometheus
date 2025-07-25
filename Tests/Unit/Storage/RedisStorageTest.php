@@ -10,6 +10,7 @@ namespace Flownative\Prometheus\Tests\Unit\Storage;
 
 use Flownative\Prometheus\Storage\RedisStorage;
 
+
 class RedisStorageTest extends AbstractStorageTestBase
 {
 
@@ -22,8 +23,11 @@ class RedisStorageTest extends AbstractStorageTestBase
         parent::setUp();
         $this->storage = new RedisStorage([
             'hostname' => getenv('REDIS_HOST') ?: '127.0.0.1',
-            'port' => getenv('REDIS_PORT') ?: '6379',
+            'port' => (int)(getenv('REDIS_PORT') ?: '6379'),
+            'username' => getenv('REDIS_USERNAME') ?: 'prometheus',
             'password' => getenv('REDIS_PASSWORD') ?: '',
+            'keyPrefix' => getenv('REDIS_PREFIX') ?: 'my-app',
+            'hashKeyPrefix' => true
         ]);
 
         $this->storage->flush();

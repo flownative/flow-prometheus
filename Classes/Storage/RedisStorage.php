@@ -77,12 +77,24 @@ class RedisStorage extends AbstractStorage
     /**
      * @var string
      */
+    protected string $username = '';
+
+    /**
+     * @var string
+     */
     protected string $password = '';
 
     /**
      * @var string
      */
     protected string $keyPrefix = 'flownative_prometheus';
+
+    /**
+     * If enabled, the key prefix is md5-hashed, avoiding problems with overly long prefixes or special characters
+     *
+     * @var bool
+     */
+    protected bool $hashKeyPrefix = false;
 
     /**
      * @var bool
@@ -98,12 +110,14 @@ class RedisStorage extends AbstractStorage
         foreach ($options as $key => $value) {
             switch ($key) {
                 case 'hostname':
+                case 'username':
                 case 'password':
                 case 'keyPrefix':
                 case 'service':
                     $this->$key = (string)$value;
                 break;
                 case 'ignoreConnectionErrors':
+                case 'hashKeyPrefix':
                     $this->$key = ($value === true || $value === 'yes' || $value === 'true' || $value === 'on' || $value === 1);
                 break;
                 case 'sentinels':
@@ -124,6 +138,9 @@ class RedisStorage extends AbstractStorage
                 default:
                     throw new InvalidConfigurationException(sprintf('invalid configuration option "%s" for Prometheus RedisStorage', $key), 1574176047);
             }
+        }
+        if ($this->hashKeyPrefix) {
+            $this->keyPrefix = md5($this->keyPrefix);
         }
         $this->redis = $this->getRedisClient();
     }
@@ -400,6 +417,10 @@ class RedisStorage extends AbstractStorage
                 'database' => $this->database
             ]
         ];
+
+        if (!empty($this->username)) {
+            $options['parameters']['username'] = $this->username;
+        }
 
         if (!empty($this->password)) {
             $options['parameters']['password'] = $this->password;

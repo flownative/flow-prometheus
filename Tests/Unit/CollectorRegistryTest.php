@@ -14,9 +14,9 @@ use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use Neos\Flow\Tests\UnitTestCase;
+use PHPUnit\Framework\TestCase;
 
-class CollectorRegistryTest extends UnitTestCase
+class CollectorRegistryTest extends TestCase
 {
     /**
      * @return array

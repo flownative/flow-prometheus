@@ -11,13 +11,16 @@ namespace Flownative\Prometheus\Tests\Unit;
 use Flownative\Prometheus\DefaultCollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use Neos\Flow\Tests\UnitTestCase;
+use PHPUnit\Framework\TestCase;
 
-class DefaultCollectorRegistryTest extends UnitTestCase
+class DefaultCollectorRegistryTest extends TestCase
 {
+    
+    
     /**
      * @test
      * @throws InvalidCollectorTypeException
+     * @throws \ReflectionException
      */
     public function collectorsDefinedInSettingsAreRegisteredAutomatically(): void
     {
@@ -35,5 +38,22 @@ class DefaultCollectorRegistryTest extends UnitTestCase
 
         $counter = $registry->getCounter('flownative_test_hits_total');
         self::assertSame('flownative_test_hits_total', $counter->getName());
+    }
+    
+    
+    /**
+     * @param \Flownative\Prometheus\DefaultCollectorRegistry $object
+     * @param string                                          $propertyName
+     * @param array                                           $dependency
+     *
+     * @return void
+     * @throws \ReflectionException
+     */
+    protected function inject(DefaultCollectorRegistry $object, string $propertyName, array $dependency): void
+    {
+        $reflection = new \ReflectionObject($object);
+        $property = $reflection->getProperty($propertyName);
+        $property->setAccessible(true);
+        $property->setValue($object, $dependency);
     }
 }
