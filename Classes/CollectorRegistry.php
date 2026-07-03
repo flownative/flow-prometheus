@@ -10,7 +10,9 @@ namespace Flownative\Prometheus;
 
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
+use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Storage\StorageInterface;
 
 class CollectorRegistry
@@ -31,6 +33,11 @@ class CollectorRegistry
     protected array $gauges = [];
 
     /**
+     * @var array
+     */
+    protected array $histograms = [];
+
+    /**
      * @param StorageInterface $storage
      */
     public function __construct(StorageInterface $storage)
@@ -41,11 +48,16 @@ class CollectorRegistry
     /**
      * @param array $collectorConfigurations
      * @throws InvalidCollectorTypeException
+     * @throws InvalidConfigurationException
      */
     public function registerMany(array $collectorConfigurations): void
     {
         foreach ($collectorConfigurations as $name => $collectorConfiguration) {
-            $this->register($name, $collectorConfiguration['type'], $collectorConfiguration['help'] ?? '', $collectorConfiguration['labels'] ?? []);
+            $options = [];
+            if (isset($collectorConfiguration['buckets'])) {
+                $options['buckets'] = $collectorConfiguration['buckets'];
+            }
+            $this->register($name, $collectorConfiguration['type'], $collectorConfiguration['help'] ?? '', $collectorConfiguration['labels'] ?? [], $options);
         }
     }
 
@@ -54,9 +66,11 @@ class CollectorRegistry
      * @param string $type
      * @param string $help
      * @param array $labels
+     * @param array $options Additional type-specific options, e.g. "buckets" for histograms
      * @throws InvalidCollectorTypeException
+     * @throws InvalidConfigurationException
      */
-    public function register(string $name, string $type, string $help = '', array $labels = []): void
+    public function register(string $name, string $type, string $help = '', array $labels = [], array $options = []): void
     {
         switch ($type) {
             case 'counter':
@@ -66,6 +80,10 @@ class CollectorRegistry
             case 'gauge':
                 $gauge = new Gauge($this->storage, $name, $help, $labels);
                 $this->gauges[$name] = $gauge;
+            break;
+            case 'histogram':
+                $histogram = new Histogram($this->storage, $name, $help, $labels, $options['buckets'] ?? []);
+                $this->histograms[$name] = $histogram;
             break;
             default:
                 throw new InvalidCollectorTypeException(sprintf('failed registering collector: invalid type "%s"', $type), 1573742887);
@@ -83,6 +101,9 @@ class CollectorRegistry
         if (isset($this->gauges[$name])) {
             unset($this->gauges[$name]);
         }
+        if (isset($this->histograms[$name])) {
+            unset($this->histograms[$name]);
+        }
     }
 
     /**
@@ -90,7 +111,7 @@ class CollectorRegistry
      */
     public function hasCollectors(): bool
     {
-        return (count($this->counters) + count($this->gauges) > 0);
+        return (count($this->counters) + count($this->gauges) + count($this->histograms) > 0);
     }
 
     /**
@@ -123,5 +144,17 @@ class CollectorRegistry
             throw new \RuntimeException(sprintf('unknown gauge %s', $name), 1574259870);
         }
         return $this->gauges[$name];
+    }
+
+    /**
+     * @param string $name
+     * @return Histogram
+     */
+    public function getHistogram(string $name): Histogram
+    {
+        if (!isset($this->histograms[$name])) {
+            throw new \RuntimeException(sprintf('unknown histogram %s', $name), 1783060247);
+        }
+        return $this->histograms[$name];
     }
 }

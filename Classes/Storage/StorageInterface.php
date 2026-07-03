@@ -10,6 +10,7 @@ namespace Flownative\Prometheus\Storage;
 
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\SampleCollection;
 
 interface StorageInterface
@@ -46,4 +47,11 @@ interface StorageInterface
      * @return void
      */
     public function updateGauge(Gauge $gauge, GaugeUpdate $update): void;
+
+    /**
+     * @param Histogram $histogram
+     * @param HistogramUpdate $update
+     * @return void
+     */
+    public function updateHistogram(Histogram $histogram, HistogramUpdate $update): void;
 }

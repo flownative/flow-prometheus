@@ -26,6 +26,11 @@
             "Flownative\\Prometheus\\": "Classes"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Flownative\\Prometheus\\Tests\\": "Tests"
+        }
+    },
     "scripts": {
         "test": "phpunit"
     },

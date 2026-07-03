@@ -4,4 +4,9 @@ Flownative:
 #      flownative_test_hits_total:
 #        type: 'counter'
 #        help: 'A counter for testing'
-#        labelNames: ['code']
+#        labels: ['code']
+#      flownative_test_request_duration_seconds:
+#        type: 'histogram'
+#        help: 'A histogram for testing'
+#        labels: ['method']
+#        buckets: [0.1, 0.5, 1, 2.5, 5, 10]
