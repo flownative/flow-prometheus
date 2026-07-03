@@ -11,6 +11,7 @@ namespace Flownative\Prometheus\Storage;
 use Flownative\Prometheus\Collector\AbstractCollector;
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
 
@@ -33,12 +34,20 @@ class InMemoryStorage extends AbstractStorage
     private array $gaugesData = [];
 
     /**
+     * @var array
+     */
+    private array $histogramsData = [];
+
+    /**
      * @return SampleCollection[]
      * @throws \Exception
      */
     public function collect(): array
     {
-        return $this->prepareCollections(array_merge($this->countersData, $this->gaugesData));
+        return array_merge(
+            $this->prepareCollections(array_merge($this->countersData, $this->gaugesData)),
+            $this->prepareHistogramCollections()
+        );
     }
 
     /**
@@ -48,6 +57,7 @@ class InMemoryStorage extends AbstractStorage
     {
         $this->countersData = [];
         $this->gaugesData = [];
+        $this->histogramsData = [];
     }
 
     public function getKeyPrefix(): string
@@ -69,6 +79,12 @@ class InMemoryStorage extends AbstractStorage
             break;
             case Gauge::TYPE:
                 $this->gaugesData[$collector->getIdentifier()] = [
+                    'collector' => $collector,
+                    'values' => []
+                ];
+            break;
+            case Histogram::TYPE:
+                $this->histogramsData[$collector->getIdentifier()] = [
                     'collector' => $collector,
                     'values' => []
                 ];
@@ -128,6 +144,59 @@ class InMemoryStorage extends AbstractStorage
             break;
         }
         $this->gaugesData[$identifier]['values'][$encodedLabels] = $value;
+    }
+
+    /**
+     * @param Histogram $histogram
+     * @param HistogramUpdate $update
+     * @return void
+     * @throws \Exception
+     */
+    public function updateHistogram(Histogram $histogram, HistogramUpdate $update): void
+    {
+        $identifier = $histogram->getIdentifier();
+        if (!isset($this->histogramsData[$identifier])) {
+            throw new \InvalidArgumentException(sprintf('failed updating unknown histogram %s (%s)', $histogram->getName(), $identifier), 1783060245);
+        }
+
+        $encodedLabels = $this->encodeLabels($update->getLabels());
+        if (!isset($this->histogramsData[$identifier]['values'][$encodedLabels])) {
+            $this->histogramsData[$identifier]['values'][$encodedLabels] = [
+                'buckets' => [],
+                'sum' => 0,
+                'count' => 0
+            ];
+        }
+
+        $bucketLabel = $this->determineBucketLabel($update->getValue(), $histogram);
+        $currentBucketCount = $this->histogramsData[$identifier]['values'][$encodedLabels]['buckets'][$bucketLabel] ?? 0;
+        $this->histogramsData[$identifier]['values'][$encodedLabels]['buckets'][$bucketLabel] = $currentBucketCount + 1;
+        $this->histogramsData[$identifier]['values'][$encodedLabels]['sum'] += $update->getValue();
+        $this->histogramsData[$identifier]['values'][$encodedLabels]['count']++;
+    }
+
+    /**
+     * @return SampleCollection[]
+     * @throws \Exception
+     */
+    private function prepareHistogramCollections(): array
+    {
+        $collections = [];
+        foreach ($this->histogramsData as $collectorIdentifier => $collectorData) {
+            $collector = $collectorData['collector'];
+            assert($collector instanceof Histogram);
+
+            $samples = $this->buildHistogramSamples($collector, $collectorData['values']);
+            $collections[$collectorIdentifier] = new SampleCollection(
+                $collector->getName(),
+                $collector->getType(),
+                $collector->getHelp(),
+                $collector->getLabels(),
+                $samples
+            );
+        }
+
+        return $collections;
     }
 
     /**

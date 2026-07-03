@@ -213,6 +213,20 @@ A gauge:
         );
 ```
 
+A histogram observes individual values (for example durations in seconds) and
+counts them into a set of configurable buckets, additionally tracking the sum
+and total number of observations:
+
+```php
+    $this->collectorRegistry->getHistogram('acme_myproject_request_duration_seconds')
+        ->observe($durationInSeconds, ['method' => 'GET']);
+```
+
+If no buckets are configured, the Prometheus default buckets
+(`0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10`) are used. A trailing
+`+Inf` bucket is always added implicitly, so it must not be configured
+explicitly. The label name `le` is reserved for histograms and cannot be used.
+
 Setting for each metric:
 
 ```yaml
@@ -225,6 +239,11 @@ Flownative:
       acme_myproject_successful_login_total:
         type: counter
         help: 'metric description'
+      acme_myproject_request_duration_seconds:
+        type: histogram
+        help: 'metric description'
+        labels: ['method']
+        buckets: [0.1, 0.5, 1, 2.5, 5, 10]
 ```
 
 Manual usage of the Collector Registry, using the `InMemoryStorage`:

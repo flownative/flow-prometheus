@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Flownative\Prometheus\Tests\Unit;
+namespace Flownative\Prometheus\Tests\Unit\Storage;
 
 /*
  * This file is part of the Flownative.Prometheus package.

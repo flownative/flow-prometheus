@@ -1,0 +1,6 @@
+vendor/
+composer.lock
+.phpunit.result.cache
+
+# Created by the neos/composer-plugin when running Composer inside this package standalone
+Packages/

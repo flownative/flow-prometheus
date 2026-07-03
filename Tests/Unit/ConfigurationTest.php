@@ -23,6 +23,7 @@ class ConfigurationTest extends UnitTestCase
         return [
             ['counter', 'A counter for testing', ['flownative', 'prometheus', 'test']],
             ['gauge', 'A temperature for testing', ['flownative', 'prometheus', 'test']],
+            ['histogram', 'A histogram for testing', ['flownative', 'prometheus', 'test']],
             ['counter', '', ['flownative', 'empty', 'help']],
             ['counter', '', ['_leading_underscore']],
             ['counter', '', ['with_Uppercase_characters']],

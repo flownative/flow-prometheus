@@ -12,6 +12,7 @@ use Exception;
 use Flownative\Prometheus\Collector\AbstractCollector;
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
@@ -37,6 +38,11 @@ class RedisStorage extends AbstractStorage
      * @var Gauge[]
      */
     protected array $gauges = [];
+
+    /**
+     * @var Histogram[]
+     */
+    protected array $histograms = [];
 
     /**
      * @var Predis\Client
@@ -129,7 +135,7 @@ class RedisStorage extends AbstractStorage
     public function collect(): array
     {
         try {
-            return $this->collectCountersAndGauges();
+            return array_merge($this->collectCountersAndGauges(), $this->collectHistograms());
         } catch (ConnectionException $exception) {
             if ($this->ignoreConnectionErrors === false) {
                 throw $exception;
@@ -172,6 +178,9 @@ class RedisStorage extends AbstractStorage
             break;
             case Gauge::TYPE:
                 $this->gauges[$collector->getIdentifier()] = $collector;
+            break;
+            case Histogram::TYPE:
+                $this->histograms[$collector->getIdentifier()] = $collector;
             break;
         }
     }
@@ -256,6 +265,40 @@ class RedisStorage extends AbstractStorage
     }
 
     /**
+     * @param Histogram $histogram
+     * @param HistogramUpdate $update
+     * @return void
+     * @throws Exception
+     */
+    public function updateHistogram(Histogram $histogram, HistogramUpdate $update): void
+    {
+        $identifier = $histogram->getIdentifier();
+        if (!isset($this->histograms[$identifier])) {
+            throw new \InvalidArgumentException(sprintf('failed updating unknown histogram %s (%s)', $histogram->getName(), $identifier), 1783060246);
+        }
+
+        try {
+            $encodedLabels = $this->encodeLabels($update->getLabels());
+            $bucketLabel = $this->determineBucketLabel($update->getValue(), $histogram);
+            $value = $update->getValue();
+
+            // The three increments belonging to one observation are bundled into a single MULTI/EXEC transaction:
+            $this->redis->transaction(static function ($transaction) use ($identifier, $encodedLabels, $bucketLabel, $value) {
+                $transaction->hIncrBy($identifier, $encodedLabels . ':b:' . $bucketLabel, 1);
+                $transaction->hIncrByFloat($identifier, $encodedLabels . ':sum', $value);
+                $transaction->hIncrBy($identifier, $encodedLabels . ':count', 1);
+            });
+
+            $this->redis->hSet($identifier, '__name', $histogram->getName());
+            $this->redis->sAdd($this->keyPrefix . Histogram::TYPE . self::KEY_SUFFIX, [$identifier]);
+        } catch (ConnectionException $exception) {
+            if ($this->ignoreConnectionErrors === false) {
+                throw $exception;
+            }
+        }
+    }
+
+    /**
      * @return SampleCollection[]
      * @throws Exception
      */
@@ -293,6 +336,56 @@ class RedisStorage extends AbstractStorage
 
                 }
             }
+        }
+        return $sampleCollections;
+    }
+
+    /**
+     * @return SampleCollection[]
+     * @throws Exception
+     */
+    private function collectHistograms(): array
+    {
+        $sampleCollections = [];
+        $collectorKeys = $this->redis->sMembers($this->keyPrefix . Histogram::TYPE . self::KEY_SUFFIX);
+        sort($collectorKeys);
+        foreach ($collectorKeys as $collectorKey) {
+            $collector = $this->histograms[$collectorKey] ?? null;
+            if ($collector === null) {
+                continue;
+            }
+
+            $collectorRawHash = $this->redis->hGetAll($collectorKey);
+            $collectorName = $collectorRawHash['__name'] ?? $collector->getName();
+            unset($collectorRawHash['__name']);
+
+            $valuesByLabelSet = [];
+            foreach ($collectorRawHash as $field => $rawValue) {
+                if (strpos($field, ':') === false) {
+                    continue;
+                }
+                // Fields are "{encodedLabels}:b:{le}", "{encodedLabels}:sum" or "{encodedLabels}:count". Since the
+                // base64 encoded labels never contain a colon, splitting at the first colon is unambiguous:
+                [$encodedLabels, $suffix] = explode(':', $field, 2);
+                if (!isset($valuesByLabelSet[$encodedLabels])) {
+                    $valuesByLabelSet[$encodedLabels] = ['buckets' => [], 'sum' => 0, 'count' => 0];
+                }
+                if ($suffix === 'sum') {
+                    $valuesByLabelSet[$encodedLabels]['sum'] = (strpos($rawValue, '.') !== false) ? (float)$rawValue : (int)$rawValue;
+                } elseif ($suffix === 'count') {
+                    $valuesByLabelSet[$encodedLabels]['count'] = (int)$rawValue;
+                } elseif (strpos($suffix, 'b:') === 0) {
+                    $valuesByLabelSet[$encodedLabels]['buckets'][substr($suffix, 2)] = (int)$rawValue;
+                }
+            }
+
+            $sampleCollections[$collectorKey] = new SampleCollection(
+                $collectorName,
+                Histogram::TYPE,
+                $collector->getHelp(),
+                $collector->getLabels(),
+                $this->buildHistogramSamples($collector, $valuesByLabelSet)
+            );
         }
         return $sampleCollections;
     }

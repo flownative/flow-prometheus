@@ -9,8 +9,10 @@ namespace Flownative\Prometheus\Tests\Unit;
  */
 
 use Flownative\Prometheus\Collector\Counter;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\CollectorRegistry;
 use Flownative\Prometheus\Exception\InvalidCollectorTypeException;
+use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Storage\InMemoryStorage;
 use Neos\Flow\Tests\UnitTestCase;
 
@@ -122,5 +124,61 @@ class CollectorRegistryTest extends UnitTestCase
         $registry->register('flownative_prometheus_test_other_calls_total', Counter::TYPE, 'another test call counter', ['tests', 'counter']);
         $otherCounter = $registry->getCounter('flownative_prometheus_test_other_calls_total');
         self::assertNotSame($counterA, $otherCounter);
+    }
+
+    /**
+     * @test
+     * @throws InvalidCollectorTypeException
+     * @throws InvalidConfigurationException
+     */
+    public function registerCreatesHistogramWithGivenBuckets(): void
+    {
+        $registry = new CollectorRegistry(new InMemoryStorage());
+        $registry->register('flownative_prometheus_test_duration_seconds', Histogram::TYPE, 'a test duration histogram', ['method'], ['buckets' => [0.1, 0.5, 1]]);
+
+        $histogram = $registry->getHistogram('flownative_prometheus_test_duration_seconds');
+        self::assertNotNull($histogram);
+        self::assertSame('flownative_prometheus_test_duration_seconds', $histogram->getName());
+        self::assertSame([0.1, 0.5, 1], $histogram->getBuckets());
+    }
+
+    /**
+     * @test
+     * @throws InvalidCollectorTypeException
+     * @throws InvalidConfigurationException
+     */
+    public function registerManyPassesBucketsToHistograms(): void
+    {
+        $registry = new CollectorRegistry(new InMemoryStorage());
+        $registry->registerMany([
+            'flownative_prometheus_test_duration_seconds' => [
+                'type' => 'histogram',
+                'help' => 'a test duration histogram',
+                'labels' => ['method'],
+                'buckets' => [0.25, 0.75, 2]
+            ]
+        ]);
+
+        $histogram = $registry->getHistogram('flownative_prometheus_test_duration_seconds');
+        self::assertSame([0.25, 0.75, 2], $histogram->getBuckets());
+    }
+
+    /**
+     * @test
+     * @throws InvalidCollectorTypeException
+     * @throws InvalidConfigurationException
+     */
+    public function unregisterUnregistersHistogramAndHasCollectorsReflectsIt(): void
+    {
+        $registry = new CollectorRegistry(new InMemoryStorage());
+        self::assertFalse($registry->hasCollectors());
+
+        $registry->register('flownative_prometheus_test_duration_seconds', Histogram::TYPE, '', [], ['buckets' => [1, 2, 5]]);
+        self::assertTrue($registry->hasCollectors());
+
+        $registry->unregister('flownative_prometheus_test_duration_seconds');
+
+        $this->expectExceptionCode(1783060247);
+        $registry->getHistogram('flownative_prometheus_test_duration_seconds');
     }
 }

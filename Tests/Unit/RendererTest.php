@@ -10,6 +10,7 @@ namespace Flownative\Prometheus\Tests\Unit;
 
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\Renderer;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
@@ -95,6 +96,41 @@ EOD;
 # TYPE http_requests_total counter
 http_requests_total{method="post",code="200"} 1027
 http_requests_total{method="post",code="400"} 3
+EOD;
+
+        $actualOutput = (new Renderer())->render($sampleCollections);
+        self::assertSame($expectedOutput, $actualOutput);
+    }
+
+    /**
+     * @test
+     */
+    public function renderGeneratesCorrectRepresentationForHistograms(): void
+    {
+        $sampleCollections = [
+            new SampleCollection(
+                'beach_build_duration_seconds',
+                Histogram::TYPE,
+                'Build duration',
+                [],
+                [
+                    new Sample('beach_build_duration_seconds_bucket', ['le' => '30'], 1),
+                    new Sample('beach_build_duration_seconds_bucket', ['le' => '60'], 3),
+                    new Sample('beach_build_duration_seconds_bucket', ['le' => '+Inf'], 4),
+                    new Sample('beach_build_duration_seconds_sum', [], 154.5),
+                    new Sample('beach_build_duration_seconds_count', [], 4),
+                ]
+            )
+        ];
+
+        $expectedOutput = <<<'EOD'
+# HELP beach_build_duration_seconds Build duration
+# TYPE beach_build_duration_seconds histogram
+beach_build_duration_seconds_bucket{le="30"} 1
+beach_build_duration_seconds_bucket{le="60"} 3
+beach_build_duration_seconds_bucket{le="+Inf"} 4
+beach_build_duration_seconds_sum 154.5
+beach_build_duration_seconds_count 4
 EOD;
 
         $actualOutput = (new Renderer())->render($sampleCollections);

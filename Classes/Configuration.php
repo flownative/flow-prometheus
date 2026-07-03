@@ -10,6 +10,7 @@ namespace Flownative\Prometheus;
 
 use Flownative\Prometheus\Collector\Counter;
 use Flownative\Prometheus\Collector\Gauge;
+use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\Exception\InvalidConfigurationException;
 
 class Configuration
@@ -48,7 +49,7 @@ class Configuration
      */
     private function setType(string $type): void
     {
-        if (!in_array($type, [Counter::TYPE, Gauge::TYPE], true)) {
+        if (!in_array($type, [Counter::TYPE, Gauge::TYPE, Histogram::TYPE], true)) {
             throw new InvalidConfigurationException(sprintf('failed creating configuration, invalid metric type "%s"', $type), 1573807113);
         }
         $this->type = $type;
