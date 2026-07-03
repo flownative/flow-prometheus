@@ -9,9 +9,9 @@ namespace Flownative\Prometheus\Tests\Unit;
  */
 
 use Flownative\Prometheus\Sample;
-use PHPUnit\Framework\TestCase;
+use Neos\Flow\Tests\UnitTestCase;
 
-class SampleTest extends TestCase
+class SampleTest extends UnitTestCase
 {
     /**
      * @test

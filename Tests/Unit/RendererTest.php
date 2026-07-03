@@ -14,9 +14,9 @@ use Flownative\Prometheus\Collector\Histogram;
 use Flownative\Prometheus\Renderer;
 use Flownative\Prometheus\Sample;
 use Flownative\Prometheus\SampleCollection;
-use PHPUnit\Framework\TestCase;
+use Neos\Flow\Tests\UnitTestCase;
 
-class RendererTest extends TestCase
+class RendererTest extends UnitTestCase
 {
     /**
      * @test

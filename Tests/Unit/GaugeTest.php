@@ -10,9 +10,9 @@ namespace Flownative\Prometheus\Tests\Unit;
 
 use Flownative\Prometheus\Collector\Gauge;
 use Flownative\Prometheus\Storage\InMemoryStorage;
-use PHPUnit\Framework\TestCase;
+use Neos\Flow\Tests\UnitTestCase;
 
-class GaugeTest extends TestCase
+class GaugeTest extends UnitTestCase
 {
     /**
      * @test

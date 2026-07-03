@@ -70,11 +70,8 @@ Flownative\Prometheus\Storage\RedisStorage:
       value:
         hostname: '%env:MY_REDIS_HOST%'
         port: '%env:MY_REDIS_PORT%'
-        username: '%env:MY_REDIS_USERNAME%'
         password: '%env:MY_REDIS_PASSWORD%'
         database: 20
-        keyPrefix: '%env:MY_REDIS_PREFIX%'
-        hashKeyPrefix: true
 ```
 
 In this example, environment variables are used for passing access
@@ -84,6 +81,40 @@ following comment:
 
 ```
 # Flownative Prometheus Metrics Exporter: There are no collectors registered at the registry.
+```
+
+If your Redis server uses [ACL](https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/)-based
+authentication, additionally provide a username:
+
+```yaml
+Flownative\Prometheus\Storage\RedisStorage:
+  arguments:
+    1:
+      value:
+        hostname: '%env:MY_REDIS_HOST%'
+        port: '%env:MY_REDIS_PORT%'
+        username: '%env:MY_REDIS_USERNAME%'
+        password: '%env:MY_REDIS_PASSWORD%'
+        database: 20
+```
+
+All Redis keys used by this package are prefixed, by default with
+"flownative_prometheus". You can set a custom prefix through the
+`keyPrefix` option. If your desired prefix is very long or contains
+special characters, enable the `hashKeyPrefix` option, which replaces
+the prefix by its md5 hash:
+
+```yaml
+Flownative\Prometheus\Storage\RedisStorage:
+  arguments:
+    1:
+      value:
+        hostname: '%env:MY_REDIS_HOST%'
+        port: '%env:MY_REDIS_PORT%'
+        password: '%env:MY_REDIS_PASSWORD%'
+        database: 20
+        keyPrefix: '%env:MY_REDIS_PREFIX%'
+        hashKeyPrefix: true
 ```
 
 The `RedisStorage` also supports Redis cluster setups with Sentinel

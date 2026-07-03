@@ -10,9 +10,9 @@ namespace Flownative\Prometheus\Tests\Unit;
 
 use Flownative\Prometheus\Exception\InvalidConfigurationException;
 use Flownative\Prometheus\Configuration;
-use PHPUnit\Framework\TestCase;
+use Neos\Flow\Tests\UnitTestCase;
 
-class ConfigurationTest extends TestCase
+class ConfigurationTest extends UnitTestCase
 {
     /**
      * @return array

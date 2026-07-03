@@ -16,9 +16,9 @@ use Flownative\Prometheus\Storage\InMemoryStorage;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Uri;
 use Neos\Flow\Security\Exception\AccessDeniedException;
-use PHPUnit\Framework\TestCase;
+use Neos\Flow\Tests\UnitTestCase;
 
-class MetricsExporterMiddlewareTest extends TestCase
+class MetricsExporterMiddlewareTest extends UnitTestCase
 {
     /**
      * @return void
